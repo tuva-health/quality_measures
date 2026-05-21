@@ -1,0 +1,32 @@
+name: 'quality_measures'
+version: '0.1.0'
+config-version: 2
+require-dbt-version: ">=1.10.0"
+
+profile: default
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+vars:
+  tuva_last_run: '{{ run_started_at.astimezone(modules.pytz.timezone("UTC")) }}'
+  # To run quality measures for a period other than current year, uncomment below.
+  # quality_measures_period_end: "2020-12-31"
+
+seeds:
+  quality_measures:
+    value_sets:
+      quality_measures:
+        quality_measures__concepts:
+          +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','quality_measures__concepts.csv') }}"
+        quality_measures__measures:
+          +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','quality_measures__measures.csv') }}"
+        quality_measures__value_sets:
+          +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','quality_measures__codes.csv') }}"
