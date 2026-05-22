@@ -1,4 +1,3 @@
-# Quality Measures
+# CMS Star Measures
 
-dbt package for the Tuva Project quality measures data mart.
-
+dbt package for the Tuva Project CMS Star Measures data mart.

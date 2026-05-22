@@ -23,11 +23,6 @@ vars:
 seeds:
   quality_measures:
     value_sets:
-      ahrq_measures:
-        pqi__measures:
-          +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','ahrq_measures__pqi_measures.csv') }}"
-        pqi__value_sets:
-          +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','ahrq_measures__pqi.csv') }}"
       quality_measures:
         quality_measures__concepts:
           +post-hook: "{{ the_tuva_project.load_versioned_seed('value_sets','quality_measures__concepts.csv') }}"
