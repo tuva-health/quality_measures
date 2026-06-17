@@ -6,9 +6,9 @@ select
       person_id
     , encounter_id
     , procedure_date
-    , source_code_type
+    , code_system as source_code_type
     , source_code
-    , normalized_code_type
+    , code_system as normalized_code_type
     , normalized_code
     , modifier_1
     , modifier_2

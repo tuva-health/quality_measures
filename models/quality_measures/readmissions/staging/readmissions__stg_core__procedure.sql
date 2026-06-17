@@ -6,6 +6,6 @@
 select
   encounter_id
 , normalized_code
-, normalized_code_type
+, code_system as normalized_code_type
 , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from {{ ref('core__procedure') }}
