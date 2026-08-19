@@ -1,0 +1,31 @@
+schema_version: 1
+package: quality-measures
+assets:
+  - seed: quality_measures__concepts
+    path: quality_measures__concepts.csv.gz
+  - seed: quality_measures__measures
+    path: quality_measures__measures.csv.gz
+  - seed: quality_measures__value_sets
+    path: quality_measures__value_sets.csv.gz
+  - seed: readmissions__acute_diagnosis_ccs
+    path: readmissions__acute_diagnosis_ccs.csv.gz
+  - seed: readmissions__acute_diagnosis_icd_10_cm
+    path: readmissions__acute_diagnosis_icd_10_cm.csv.gz
+  - seed: readmissions__always_planned_ccs_diagnosis_category
+    path: readmissions__always_planned_ccs_diagnosis_category.csv.gz
+  - seed: readmissions__always_planned_ccs_procedure_category
+    path: readmissions__always_planned_ccs_procedure_category.csv.gz
+  - seed: readmissions__exclusion_ccs_diagnosis_category
+    path: readmissions__exclusion_ccs_diagnosis_category.csv.gz
+  - seed: readmissions__icd_10_cm_to_ccs
+    path: readmissions__icd_10_cm_to_ccs.csv.gz
+  - seed: readmissions__icd_10_pcs_to_ccs
+    path: readmissions__icd_10_pcs_to_ccs.csv.gz
+  - seed: readmissions__potentially_planned_ccs_procedure_category
+    path: readmissions__potentially_planned_ccs_procedure_category.csv.gz
+  - seed: readmissions__potentially_planned_icd_10_pcs
+    path: readmissions__potentially_planned_icd_10_pcs.csv.gz
+  - seed: readmissions__specialty_cohort
+    path: readmissions__specialty_cohort.csv.gz
+  - seed: readmissions__surgery_gynecology_cohort
+    path: readmissions__surgery_gynecology_cohort.csv.gz
