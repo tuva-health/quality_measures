@@ -1,0 +1,149 @@
+version: 2
+
+unit_tests:
+  - name: test_int_adh_statins_long_preserves_result_grain_and_flags
+    description: &description >
+      Multiple denominator, numerator, and exclusion records produce one
+      person-measure result using the latest dated evidence and exclusion.
+    model: quality_measures__int_adh_statins_long
+    config: &config
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_adh_statins_denominator')
+        rows: &denominator_rows
+          - &eligible_result
+            person_id: person_with_multiple_events
+            performance_period_begin: '2024-01-01'
+            performance_period_end: '2024-12-31'
+            measure_id: TEST
+            measure_name: Test measure
+            measure_version: '1'
+            denominator_flag: 1
+          - *eligible_result
+          - person_id: denominator_only
+            performance_period_begin: '2024-01-01'
+            performance_period_end: '2024-12-31'
+            measure_id: TEST
+            measure_name: Test measure
+            measure_version: '1'
+            denominator_flag: 1
+      - input: ref('quality_measures__int_adh_statins_numerator')
+        rows: &numerator_rows
+          - person_id: person_with_multiple_events
+            evidence_date: '2024-03-01'
+            evidence_value: older evidence
+          - person_id: person_with_multiple_events
+            evidence_date: '2024-11-01'
+            evidence_value: latest evidence
+          - person_id: numerator_without_denominator
+            evidence_date: '2024-12-01'
+            evidence_value: orphan evidence
+      - input: ref('quality_measures__int_adh_statins_exclusions')
+        rows: &exclusion_rows
+          - person_id: person_with_multiple_events
+            exclusion_date: '2024-02-01'
+            exclusion_reason: older exclusion
+          - person_id: person_with_multiple_events
+            exclusion_date: '2024-10-01'
+            exclusion_reason: latest exclusion
+          - person_id: exclusion_without_denominator
+            exclusion_date: '2024-12-01'
+            exclusion_reason: orphan exclusion
+    expect:
+      rows: &expected_rows
+        - person_id: person_with_multiple_events
+          denominator_flag: 1
+          numerator_flag: 1
+          exclusion_flag: 1
+          evidence_date: '2024-11-01'
+          evidence_value: latest evidence
+          exclusion_date: '2024-10-01'
+          exclusion_reason: latest exclusion
+          performance_period_begin: '2024-01-01'
+          performance_period_end: '2024-12-31'
+          measure_id: TEST
+          measure_name: Test measure
+          measure_version: '1'
+        - person_id: denominator_only
+          denominator_flag: 1
+          numerator_flag: 0
+          exclusion_flag: 0
+          evidence_date: null
+          evidence_value: null
+          exclusion_date: null
+          exclusion_reason: null
+          performance_period_begin: '2024-01-01'
+          performance_period_end: '2024-12-31'
+          measure_id: TEST
+          measure_name: Test measure
+          measure_version: '1'
+
+  - name: test_int_adh_diabetes_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_adh_diabetes_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_adh_diabetes_denominator')
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_adh_diabetes_numerator')
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_adh_diabetes_exclusions')
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows
+
+  - name: test_int_cqm130_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_cqm130_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_cqm130_denominator')
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_cqm130_numerator')
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_cqm130_exclusions')
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows
+
+  - name: test_int_cqm438_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_cqm438_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_cqm438_denominator')
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_cqm438_numerator')
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_cqm438_exclusions')
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows
+
+  - name: test_int_nqf0420_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_nqf0420_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_nqf0420_denominator')
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_nqf0420_numerator')
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_nqf0420_exclusions')
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows
+
+  - name: test_int_supd_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_supd_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_supd_denominator')
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_supd_numerator')
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_supd_exclusions')
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows

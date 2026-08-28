@@ -479,6 +479,8 @@ models:
       Final preparation of the reporting version of CQM 438, Statin Therapy for
       the Prevention and Treatment of Cardiovascular Disease before combining
       with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
@@ -647,6 +649,8 @@ models:
       Final preparation of the reporting version of CQM 130, Documentation of
       Current Medications in the Medical Record before combining with other
       measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
@@ -808,6 +812,8 @@ models:
     description: >
       Final preparation of the reporting version of NQF 0420, Pain Assessment
       and Follow-Up before combining with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
@@ -979,6 +985,8 @@ models:
     description: >
       Final preparation of the reporting version of ADH-Diabetes, Medication
       Adherence for Diabetes Medications before combining with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
@@ -1295,6 +1303,8 @@ models:
     description: >
       Final preparation of the reporting version of SUPD, Statin Use in Persons
       with Diabetes before combining with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
@@ -1452,6 +1462,8 @@ models:
     description: >
       Final preparation of the reporting version of ADH-Statins, Medication
       Adherence for Cholesterol before combining with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
