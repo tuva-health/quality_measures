@@ -4,6 +4,7 @@
 }}
 select
       person_id
+    , data_source
     , claim_id
     , encounter_id
     , recorded_date

@@ -1,0 +1,59 @@
+version: 2
+
+unit_tests:
+  - name: test_supd_denominator_deduplicates_antidiabetic_value_set_codes
+    description: >
+      Duplicate PQA Antidiabetics rows in the published value set must not
+      multiply a person's denominator result.
+    model: quality_measures__int_supd_denominator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              '00000000001' as code
+            , 'NDC' as code_system
+            , 'PQA Antidiabetics Medications' as concept_name
+          union all
+          select
+              '00000000001'
+            , 'NDC'
+            , 'PQA Antidiabetics Medications'
+      - input: ref('quality_measures__stg_pharmacy_claim')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as dispensing_date
+            , '00000000001' as ndc_code
+          union all
+          select
+              'person_1'
+            , 'source_a'
+            , cast('2024-06-15' as date)
+            , '00000000001'
+      - input: ref('quality_measures__int_supd__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'SUPD' as measure_id
+            , 'Statin Use in Persons with Diabetes' as measure_name
+            , '2024' as measure_version
+      - input: ref('quality_measures__stg_core__patient')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('1970-01-01' as date) as birth_date
+            , cast(null as date) as death_date
+    expect:
+      rows:
+        - person_id: person_1
+          data_source: source_a
+          denominator_flag: 1

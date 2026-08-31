@@ -25,6 +25,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
     from {{ ref('quality_measures__int_adh_statins_denominator') }}
 
 )
@@ -33,6 +34,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , exclusion_date
       , exclusion_reason
     from {{ ref('quality_measures__int_shared_exclusions_hospice_palliative') }}
@@ -44,6 +46,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from hospice_palliative
@@ -72,6 +75,7 @@ with denominator as (
 
     select
           condition.person_id
+        , condition.data_source
         , condition.recorded_date as exclusion_date
         , esrd_codes.concept_name as exclusion_reason
     from {{ ref('quality_measures__stg_core__condition') }} as condition
@@ -86,6 +90,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from valid_hospice
@@ -94,6 +99,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from valid_esrd
@@ -104,11 +110,13 @@ with denominator as (
 
     select
           exclusions.person_id
+        , exclusions.data_source
         , exclusion_date
         , exclusion_reason
     from exclusions
     inner join denominator
       on exclusions.person_id = denominator.person_id
+      and exclusions.data_source = denominator.data_source
 
 )
 
@@ -117,15 +125,17 @@ with denominator as (
     select
         distinct
             cast(person_id as {{ dbt.type_string() }}) as person_id
+          , cast(data_source as {{ dbt.type_string() }}) as data_source
           , cast(exclusion_date as date) as exclusion_date
           , cast(exclusion_reason as {{ dbt.type_string() }}) as exclusion_reason
-          , 1 as exclusion_flag
+          , cast(1 as {{ dbt.type_int() }}) as exclusion_flag
     from measure_exclusions
 
 )
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , exclusion_flag

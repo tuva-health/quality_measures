@@ -7,6 +7,7 @@
 
 select
       person_id
+    , data_source
     , encounter_id
     , observation_date
     , result
@@ -22,6 +23,7 @@ from {{ ref('core__observation') }}
 
 select
       person_id
+    , data_source
     , encounter_id
     , observation_date
     , result
@@ -38,6 +40,7 @@ from {{ ref('core__observation') }}
 {% if target.type == 'fabric' %}
     select top 0
           cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as encounter_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as observation_date
         , cast(null as {{ dbt.type_string() }} ) as result
@@ -50,6 +53,7 @@ from {{ ref('core__observation') }}
 {% else %}
 select
           cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as encounter_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as observation_date
         , cast(null as {{ dbt.type_string() }} ) as result

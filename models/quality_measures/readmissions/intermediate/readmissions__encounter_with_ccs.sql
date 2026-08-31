@@ -12,6 +12,7 @@
 select
     aa.encounter_id
     , aa.person_id
+    , aa.data_source
     , aa.admit_date
     , aa.discharge_date
     , aa.discharge_disposition_code

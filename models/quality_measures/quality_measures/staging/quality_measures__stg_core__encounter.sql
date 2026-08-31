@@ -7,6 +7,7 @@
 
 select
       person_id
+    , data_source
     , encounter_id
     , encounter_type
     , encounter_group
@@ -20,6 +21,7 @@ from {{ ref('core__encounter') }}
 
 select
       person_id
+    , data_source
     , encounter_id
     , encounter_type
     , encounter_group
@@ -34,6 +36,7 @@ from {{ ref('core__encounter') }}
 {% if target.type == 'fabric' %}
     select top 0
       cast(null as {{ dbt.type_string() }} ) as person_id
+    , cast(null as {{ dbt.type_string() }} ) as data_source
     , cast(null as {{ dbt.type_string() }} ) as encounter_id
     , cast(null as {{ dbt.type_string() }} ) as encounter_type
     , cast(null as {{ dbt.type_string() }} ) as encounter_group
@@ -44,6 +47,7 @@ from {{ ref('core__encounter') }}
 {% else %}
     select
       cast(null as {{ dbt.type_string() }} ) as person_id
+    , cast(null as {{ dbt.type_string() }} ) as data_source
     , cast(null as {{ dbt.type_string() }} ) as encounter_id
     , cast(null as {{ dbt.type_string() }} ) as encounter_type
     , cast(null as {{ dbt.type_string() }} ) as encounter_group

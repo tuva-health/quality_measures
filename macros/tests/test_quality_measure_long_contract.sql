@@ -7,6 +7,7 @@ with validation as (
         , count(*) over (
             partition by
                   person_id
+                , data_source
                 , measure_id
                 , measure_version
                 , performance_period_begin
@@ -20,6 +21,7 @@ select *
 from validation
 where result_row_count != 1
    or person_id is null
+   or data_source is null
    or measure_id is null
    or measure_version is null
    or performance_period_begin is null

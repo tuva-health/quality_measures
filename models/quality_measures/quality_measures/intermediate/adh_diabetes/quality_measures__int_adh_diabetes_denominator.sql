@@ -19,6 +19,7 @@ with diabetics_codes as (
 
     select
         person_id
+      , data_source
       , dispensing_date
       , ndc_code
       , days_supply
@@ -33,6 +34,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , days_supply
@@ -53,11 +55,13 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , performance_period_end
         , dense_rank() over (
             partition by
                   person_id
+                , data_source
                 , performance_period_end
             order by dispensing_date
         ) as dr
@@ -69,6 +73,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , performance_period_end
     from rx_fill_order
@@ -80,6 +85,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , (1 + {{ dbt.datediff (
                                   datepart = 'day'
                                 , first_date = 'dispensing_date'
@@ -100,6 +106,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , days_in_treatment_period
     from timely_fill_check
     where days_in_treatment_period > 90
@@ -110,6 +117,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
     from rx_fill_order
     where dr = 2
 
@@ -119,10 +127,12 @@ with diabetics_codes as (
 
     select
           first_check_passed_patients.person_id
+        , first_check_passed_patients.data_source
         , first_check_passed_patients.days_in_treatment_period
     from first_check_passed_patients
     inner join second_check_passed_patients
         on first_check_passed_patients.person_id = second_check_passed_patients.person_id
+        and first_check_passed_patients.data_source = second_check_passed_patients.data_source
 
 )
 
@@ -130,6 +140,7 @@ with diabetics_codes as (
 
     select
           patients.person_id
+        , patients.data_source
         , floor({{ datediff('birth_date', 'pp.performance_period_begin', 'hour') }} / 8760.0) as age
         , days_in_treatment_period
         , performance_period_begin
@@ -140,6 +151,7 @@ with diabetics_codes as (
     from {{ ref('quality_measures__stg_core__patient') }} as patients
     inner join qualifying_patients
         on patients.person_id = qualifying_patients.person_id
+        and patients.data_source = qualifying_patients.data_source
     cross join {{ ref('quality_measures__int_adh_diabetes__performance_period') }} as pp
     where patients.death_date is null
 
@@ -153,6 +165,7 @@ with diabetics_codes as (
 
     select
           qualifying_patients_with_age.person_id
+        , qualifying_patients_with_age.data_source
         , qualifying_patients_with_age.age
         , rx_diabetes_in_measurement_period.dispensing_date
         , rx_diabetes_in_measurement_period.ndc_code
@@ -166,6 +179,7 @@ with diabetics_codes as (
     from qualifying_patients_with_age
     inner join rx_diabetes_in_measurement_period
         on qualifying_patients_with_age.person_id = rx_diabetes_in_measurement_period.person_id
+        and qualifying_patients_with_age.data_source = rx_diabetes_in_measurement_period.data_source
 
 )
 
@@ -173,6 +187,7 @@ with diabetics_codes as (
 
     select
           person_id
+        , data_source
         , age
         , dispensing_date
         , ndc_code
@@ -193,6 +208,7 @@ with diabetics_codes as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(age as integer) as age
         , cast(dispensing_date as date) as dispensing_date
         , cast(ndc_code as {{ dbt.type_string() }}) as ndc_code
@@ -203,13 +219,14 @@ with diabetics_codes as (
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
         , cast(measure_name as {{ dbt.type_string() }}) as measure_name
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
-        , cast(denominator_flag as integer) as denominator_flag
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
     from denominator
 
 )
 
 select
       person_id
+    , data_source
     , age
     , dispensing_date
     , ndc_code

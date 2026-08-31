@@ -26,12 +26,15 @@
 
 
 
-select distinct a.encounter_id, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+select distinct a.encounter_id, a.data_source, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from {{ ref('readmissions__encounter') }} as a
 inner join {{ ref('readmissions__index_time_requirement') }} as b
     on a.encounter_id = b.encounter_id
+    and a.data_source = b.data_source
 inner join {{ ref('readmissions__index_discharge_requirement') }} as c
     on a.encounter_id = c.encounter_id
+    and a.data_source = c.data_source
 left outer join {{ ref('readmissions__exclusion') }} as d
     on a.encounter_id = d.encounter_id
+    and a.data_source = d.data_source
 where d.encounter_id is null

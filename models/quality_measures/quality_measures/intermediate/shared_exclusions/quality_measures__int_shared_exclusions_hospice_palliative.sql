@@ -36,6 +36,7 @@ with exclusion_codes as (
 
     select
           person_id
+        , data_source
         , claim_id
         , recorded_date
         , coalesce(
@@ -57,6 +58,7 @@ with exclusion_codes as (
 
     select
           person_id
+        , data_source
         , claim_id
         , claim_start_date
         , claim_end_date
@@ -70,6 +72,7 @@ with exclusion_codes as (
 
     select
           person_id
+        , data_source
         , observation_date
         , coalesce(
               normalized_code_type
@@ -91,6 +94,7 @@ with exclusion_codes as (
 
     select
           person_id
+        , data_source
         , procedure_date
         , coalesce(
               normalized_code_type
@@ -112,6 +116,7 @@ with exclusion_codes as (
 
     select
           conditions.person_id
+        , conditions.data_source
         , conditions.claim_id
         , conditions.recorded_date
         , exclusion_codes.concept_name as concept_name
@@ -126,6 +131,7 @@ with exclusion_codes as (
 
     select
           medical_claim.person_id
+        , medical_claim.data_source
         , medical_claim.claim_id
         , medical_claim.claim_start_date
         , medical_claim.claim_end_date
@@ -142,6 +148,7 @@ with exclusion_codes as (
 
     select
           observations.person_id
+        , observations.data_source
         , observations.observation_date
         , exclusion_codes.concept_name as concept_name
     from observations
@@ -155,6 +162,7 @@ with exclusion_codes as (
 
     select
           procedures.person_id
+        , procedures.data_source
         , procedures.procedure_date
         , exclusion_codes.concept_name as concept_name
     from procedures
@@ -167,6 +175,7 @@ with exclusion_codes as (
 , patients_with_exclusions as (
 
     select person_id
+        , data_source
         , recorded_date as exclusion_date
         , concept_name as exclusion_reason
     from condition_exclusions
@@ -174,6 +183,7 @@ with exclusion_codes as (
     union all
 
     select person_id
+        , data_source
         , coalesce(claim_end_date, claim_start_date) as exclusion_date
         , concept_name as exclusion_reason
     from med_claim_exclusions
@@ -181,6 +191,7 @@ with exclusion_codes as (
     union all
 
     select person_id
+        , data_source
         , observation_date as exclusion_date
         , concept_name as exclusion_reason
     from observation_exclusions
@@ -188,6 +199,7 @@ with exclusion_codes as (
     union all
 
     select person_id
+        , data_source
         , procedure_date as exclusion_date
         , concept_name as exclusion_reason
     from procedure_exclusions
@@ -196,6 +208,7 @@ with exclusion_codes as (
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , 'hospice_palliative' as exclusion_type

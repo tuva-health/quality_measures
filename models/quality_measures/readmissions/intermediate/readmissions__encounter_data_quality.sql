@@ -16,7 +16,7 @@
 -- there is a one to one correspondence between the
 -- rows in stg_encounter and this CTE.
 with best_encounter as (
-    select distinct encounter_id
+    select distinct encounter_id, data_source
     from {{ ref('readmissions__encounter_overlap') }} as overlap
     where overlap.is_best_encounter = 0
 )
@@ -24,6 +24,7 @@ with best_encounter as (
 , encounter_data_quality_issues as (
 select
     aa.encounter_id
+    , aa.data_source
     , case
         when aa.admit_date is null then 1
 	else 0
@@ -85,6 +86,7 @@ from {{ ref('readmissions__encounter_with_ccs') }} as aa
      and aa.drg_code_type = 'apr-drg'
      left outer join best_encounter as be
      on aa.encounter_id = be.encounter_id
+     and aa.data_source = be.data_source
 )
 
 
@@ -95,6 +97,7 @@ from {{ ref('readmissions__encounter_with_ccs') }} as aa
 , all_data_quality_flags as (
 select
     encounter_id
+    , data_source
     , diagnosis_ccs
     , case
         when

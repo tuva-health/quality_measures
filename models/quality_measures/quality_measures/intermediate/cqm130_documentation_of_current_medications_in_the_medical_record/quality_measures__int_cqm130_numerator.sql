@@ -7,6 +7,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , procedure_encounter_date
         , claims_encounter_date
         , performance_period_begin
@@ -34,9 +35,10 @@ with denominator as (
 , procedures as (
 
     select
-        person_id
-      , procedure_date
-      , coalesce(
+          person_id
+        , data_source
+        , procedure_date
+        , coalesce(
               normalized_code_type
             , case
                 when lower(source_code_type) = 'cpt' then 'hcpcs'
@@ -56,6 +58,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , procedure_date
     from procedures
     inner join medication_code
@@ -68,6 +71,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , coalesce(claim_end_date, claim_start_date) as encounter_date
     from {{ ref('quality_measures__stg_medical_claim') }} as medical_claim
     inner join medication_code
@@ -80,6 +84,7 @@ with denominator as (
 
     select
           documenting_meds_procedures.person_id
+        , documenting_meds_procedures.data_source
         , documenting_meds_procedures.procedure_date as encounter_date
         , denominator.performance_period_begin
         , denominator.performance_period_end
@@ -89,6 +94,7 @@ with denominator as (
     from documenting_meds_procedures
     inner join denominator
       on documenting_meds_procedures.person_id = denominator.person_id
+        and documenting_meds_procedures.data_source = denominator.data_source
         and documenting_meds_procedures.procedure_date = denominator.procedure_encounter_date
 
 )
@@ -97,6 +103,7 @@ with denominator as (
 
     select
           documenting_meds_claims.person_id
+        , documenting_meds_claims.data_source
         , documenting_meds_claims.encounter_date
         , denominator.performance_period_begin
         , denominator.performance_period_end
@@ -106,6 +113,7 @@ with denominator as (
     from documenting_meds_claims
     inner join denominator
       on documenting_meds_claims.person_id = denominator.person_id
+        and documenting_meds_claims.data_source = denominator.data_source
         and documenting_meds_claims.encounter_date = denominator.claims_encounter_date
 
 )
@@ -114,26 +122,28 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , encounter_date
         , performance_period_begin
         , performance_period_end
         , measure_id
         , measure_name
         , measure_version
-        , cast(1 as integer) as numerator_flag
+        , cast(1 as {{ dbt.type_int() }}) as numerator_flag
     from qualifying_procedure
 
     union all
 
     select
           person_id
+        , data_source
         , encounter_date
         , performance_period_begin
         , performance_period_end
         , measure_id
         , measure_name
         , measure_version
-        , cast(1 as integer) as numerator_flag
+        , cast(1 as {{ dbt.type_int() }}) as numerator_flag
     from qualifying_claims
 
 )
@@ -142,6 +152,7 @@ with denominator as (
 
      select distinct
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(performance_period_begin as date) as performance_period_begin
         , cast(performance_period_end as date) as performance_period_end
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
@@ -149,13 +160,14 @@ with denominator as (
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
         , cast(encounter_date as date) as evidence_date
         , cast(null as {{ dbt.type_string() }}) as evidence_value
-        , cast(numerator_flag as integer) as numerator_flag
+        , cast(numerator_flag as {{ dbt.type_int() }}) as numerator_flag
       from qualifying_cares
 
 )
 
 select
       person_id
+    , data_source
     , performance_period_begin
     , performance_period_end
     , measure_id

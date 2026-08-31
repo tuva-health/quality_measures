@@ -4,6 +4,7 @@
 }}
 select
       person_id
+    , data_source
     , encounter_id
     , procedure_date
     , code_system as source_code_type

@@ -10,48 +10,97 @@ unit_tests:
       enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
     given:
       - input: ref('quality_measures__int_adh_statins_denominator')
-        rows: &denominator_rows
-          - &eligible_result
-            person_id: person_with_multiple_events
-            performance_period_begin: '2024-01-01'
-            performance_period_end: '2024-12-31'
-            measure_id: TEST
-            measure_name: Test measure
-            measure_version: '1'
-            denominator_flag: 1
-          - *eligible_result
-          - person_id: denominator_only
-            performance_period_begin: '2024-01-01'
-            performance_period_end: '2024-12-31'
-            measure_id: TEST
-            measure_name: Test measure
-            measure_version: '1'
-            denominator_flag: 1
+        format: sql
+        rows: &denominator_rows |
+          select
+              'person_with_multiple_events' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'TEST' as measure_id
+            , 'Test measure' as measure_name
+            , '1' as measure_version
+            , 1 as denominator_flag
+          union all
+          select
+              'person_with_multiple_events'
+            , 'source_a'
+            , cast('2024-01-01' as date)
+            , cast('2024-12-31' as date)
+            , 'TEST'
+            , 'Test measure'
+            , '1'
+            , 1
+          union all
+          select
+              'denominator_only'
+            , 'source_a'
+            , cast('2024-01-01' as date)
+            , cast('2024-12-31' as date)
+            , 'TEST'
+            , 'Test measure'
+            , '1'
+            , 1
+          union all
+          select
+              'person_with_multiple_events'
+            , 'source_b'
+            , cast('2024-01-01' as date)
+            , cast('2024-12-31' as date)
+            , 'TEST'
+            , 'Test measure'
+            , '1'
+            , 1
       - input: ref('quality_measures__int_adh_statins_numerator')
-        rows: &numerator_rows
-          - person_id: person_with_multiple_events
-            evidence_date: '2024-03-01'
-            evidence_value: older evidence
-          - person_id: person_with_multiple_events
-            evidence_date: '2024-11-01'
-            evidence_value: latest evidence
-          - person_id: numerator_without_denominator
-            evidence_date: '2024-12-01'
-            evidence_value: orphan evidence
+        format: sql
+        rows: &numerator_rows |
+          select
+              'person_with_multiple_events' as person_id
+            , 'source_a' as data_source
+            , cast('2024-03-01' as date) as evidence_date
+            , 'older evidence' as evidence_value
+          union all
+          select
+              'person_with_multiple_events'
+            , 'source_a'
+            , cast('2024-11-01' as date)
+            , 'latest evidence'
+          union all
+          select
+              'numerator_without_denominator'
+            , 'source_a'
+            , cast('2024-12-01' as date)
+            , 'orphan evidence'
+          union all
+          select
+              'person_with_multiple_events'
+            , 'source_b'
+            , cast('2024-08-01' as date)
+            , 'source b evidence'
       - input: ref('quality_measures__int_adh_statins_exclusions')
-        rows: &exclusion_rows
-          - person_id: person_with_multiple_events
-            exclusion_date: '2024-02-01'
-            exclusion_reason: older exclusion
-          - person_id: person_with_multiple_events
-            exclusion_date: '2024-10-01'
-            exclusion_reason: latest exclusion
-          - person_id: exclusion_without_denominator
-            exclusion_date: '2024-12-01'
-            exclusion_reason: orphan exclusion
+        format: sql
+        rows: &exclusion_rows |
+          select
+              'person_with_multiple_events' as person_id
+            , 'source_a' as data_source
+            , cast('2024-02-01' as date) as exclusion_date
+            , 'older exclusion' as exclusion_reason
+          union all
+          select
+              'person_with_multiple_events'
+            , 'source_a'
+            , cast('2024-10-01' as date)
+            , 'latest exclusion'
+          union all
+          select
+              'exclusion_without_denominator'
+            , 'source_a'
+            , cast('2024-12-01' as date)
+            , 'orphan exclusion'
     expect:
       rows: &expected_rows
         - person_id: person_with_multiple_events
+          data_source: source_a
           denominator_flag: 1
           numerator_flag: 1
           exclusion_flag: 1
@@ -65,11 +114,26 @@ unit_tests:
           measure_name: Test measure
           measure_version: '1'
         - person_id: denominator_only
+          data_source: source_a
           denominator_flag: 1
           numerator_flag: 0
           exclusion_flag: 0
           evidence_date: null
           evidence_value: null
+          exclusion_date: null
+          exclusion_reason: null
+          performance_period_begin: '2024-01-01'
+          performance_period_end: '2024-12-31'
+          measure_id: TEST
+          measure_name: Test measure
+          measure_version: '1'
+        - person_id: person_with_multiple_events
+          data_source: source_b
+          denominator_flag: 1
+          numerator_flag: 1
+          exclusion_flag: 0
+          evidence_date: '2024-08-01'
+          evidence_value: source b evidence
           exclusion_date: null
           exclusion_reason: null
           performance_period_begin: '2024-01-01'
@@ -84,10 +148,13 @@ unit_tests:
     config: *config
     given:
       - input: ref('quality_measures__int_adh_diabetes_denominator')
+        format: sql
         rows: *denominator_rows
       - input: ref('quality_measures__int_adh_diabetes_numerator')
+        format: sql
         rows: *numerator_rows
       - input: ref('quality_measures__int_adh_diabetes_exclusions')
+        format: sql
         rows: *exclusion_rows
     expect:
       rows: *expected_rows
@@ -98,10 +165,13 @@ unit_tests:
     config: *config
     given:
       - input: ref('quality_measures__int_cqm130_denominator')
+        format: sql
         rows: *denominator_rows
       - input: ref('quality_measures__int_cqm130_numerator')
+        format: sql
         rows: *numerator_rows
       - input: ref('quality_measures__int_cqm130_exclusions')
+        format: sql
         rows: *exclusion_rows
     expect:
       rows: *expected_rows
@@ -112,10 +182,13 @@ unit_tests:
     config: *config
     given:
       - input: ref('quality_measures__int_cqm438_denominator')
+        format: sql
         rows: *denominator_rows
       - input: ref('quality_measures__int_cqm438_numerator')
+        format: sql
         rows: *numerator_rows
       - input: ref('quality_measures__int_cqm438_exclusions')
+        format: sql
         rows: *exclusion_rows
     expect:
       rows: *expected_rows
@@ -126,10 +199,13 @@ unit_tests:
     config: *config
     given:
       - input: ref('quality_measures__int_nqf0420_denominator')
+        format: sql
         rows: *denominator_rows
       - input: ref('quality_measures__int_nqf0420_numerator')
+        format: sql
         rows: *numerator_rows
       - input: ref('quality_measures__int_nqf0420_exclusions')
+        format: sql
         rows: *exclusion_rows
     expect:
       rows: *expected_rows
@@ -140,10 +216,30 @@ unit_tests:
     config: *config
     given:
       - input: ref('quality_measures__int_supd_denominator')
+        format: sql
         rows: *denominator_rows
       - input: ref('quality_measures__int_supd_numerator')
+        format: sql
         rows: *numerator_rows
       - input: ref('quality_measures__int_supd_exclusions')
+        format: sql
+        rows: *exclusion_rows
+    expect:
+      rows: *expected_rows
+
+  - name: test_int_adhras_long_preserves_result_grain_and_flags
+    description: *description
+    model: quality_measures__int_adhras_long
+    config: *config
+    given:
+      - input: ref('quality_measures__int_adhras_denominator')
+        format: sql
+        rows: *denominator_rows
+      - input: ref('quality_measures__int_adhras_numerator')
+        format: sql
+        rows: *numerator_rows
+      - input: ref('quality_measures__int_adhras_exclusions')
+        format: sql
         rows: *exclusion_rows
     expect:
       rows: *expected_rows

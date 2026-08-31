@@ -41,6 +41,7 @@ with encounter_enhanced as (
   select distinct
     e1.encounter_id
     , e1.person_id
+    , e1.data_source
     , e1.admit_date
     , e1.discharge_date
   from encounter_enhanced as e1
@@ -48,6 +49,7 @@ with encounter_enhanced as (
     select 1
     from encounter_enhanced as e2
     where e1.person_id = e2.person_id
+      and e1.data_source = e2.data_source
       and e1.encounter_id != e2.encounter_id
       and e1.admit_date <= e2.discharge_date
       and e1.discharge_date >= e2.admit_date
@@ -59,12 +61,14 @@ with encounter_enhanced as (
   select distinct /* distinct here to prevent fan out for >2 overlapping encounters. */
     e1.encounter_id
     , e1.person_id
+    , e1.data_source
     , MIN(e2.encounter_id) over (
-      partition by e1.person_id, e1.encounter_id
+      partition by e1.person_id, e1.data_source, e1.encounter_id
     ) as overlap_group_id
   from overlapping_encounters as e1
   inner join overlapping_encounters as e2
     on e1.person_id = e2.person_id
+    and e1.data_source = e2.data_source
     and e1.admit_date <= e2.discharge_date
     and e1.discharge_date >= e2.admit_date
 )
@@ -76,7 +80,7 @@ with encounter_enhanced as (
     , COALESCE(og.overlap_group_id, e.encounter_id) as overlap_group_id
     , case when og.encounter_id is not null then 1 else 0 end as has_overlaps
     , ROW_NUMBER() over (
-      partition by e.person_id, COALESCE(og.overlap_group_id, e.encounter_id)
+      partition by e.person_id, e.data_source, COALESCE(og.overlap_group_id, e.encounter_id)
       order by
         e.source_type_priority asc        -- prefer 'claim' source type
         , e.actual_length_of_stay desc      -- prefer longer date spans
@@ -87,12 +91,14 @@ with encounter_enhanced as (
   left outer join overlap_groups as og
     on e.encounter_id = og.encounter_id
     and e.person_id = og.person_id
+    and e.data_source = og.data_source
 )
 
 
 select
   encounter_id
   , person_id
+  , data_source
   , admit_date
   , discharge_date
   , actual_length_of_stay

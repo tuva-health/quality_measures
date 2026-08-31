@@ -13,7 +13,7 @@
 
 
 with all_invalid_discharges as (
-select encounter_id
+select encounter_id, data_source
 from {{ ref('readmissions__encounter') }}
 where discharge_disposition_code in (
      '02' -- Patient discharged/transferred to other short term general hospital for inpatient care.
@@ -24,8 +24,9 @@ where discharge_disposition_code in (
 
 -- All discharges that meet the discharge_disposition_code
 -- requirements to be an index admission
-select a.encounter_id, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+select a.encounter_id, a.data_source, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from {{ ref('readmissions__encounter') }} as a
 left outer join all_invalid_discharges as b
     on a.encounter_id = b.encounter_id
+    and a.data_source = b.data_source
 where b.encounter_id is null

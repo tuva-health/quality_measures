@@ -27,6 +27,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
     from {{ ref('quality_measures__int_adh_diabetes_denominator') }}
 
 )
@@ -49,6 +50,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from {{ ref('quality_measures__int_shared_exclusions_hospice_palliative') }}
@@ -60,6 +62,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from hospice_palliative
@@ -75,6 +78,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , recorded_date
         , claim_id
         , coalesce(
@@ -97,6 +101,7 @@ with denominator as (
 
       select
           conditions.person_id
+        , conditions.data_source
         , conditions.recorded_date as exclusion_date
         , exclusion_codes.concept_name as exclusion_reason
     from conditions
@@ -110,6 +115,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , dispensing_date as exclusion_date
       , concept_name as exclusion_reason
     from {{ ref('quality_measures__stg_pharmacy_claim') }} as pharmacy_claims
@@ -123,6 +129,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , exclusion_date
       , exclusion_reason
     from valid_hospice
@@ -131,6 +138,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , exclusion_date
       , exclusion_reason
     from condition_exclusions
@@ -139,6 +147,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , exclusion_date
       , exclusion_reason
     from pharmacy_exclusions
@@ -149,11 +158,13 @@ with denominator as (
 
     select
         exclusion_patients.person_id
+      , exclusion_patients.data_source
       , exclusion_patients.exclusion_date
       , exclusion_patients.exclusion_reason
     from exclusion_patients
     inner join denominator
       on exclusion_patients.person_id = denominator.person_id
+      and exclusion_patients.data_source = denominator.data_source
 
 )
 
@@ -162,15 +173,17 @@ with denominator as (
     select
         distinct
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(exclusion_date as date) as exclusion_date
         , cast(exclusion_reason as {{ dbt.type_string() }}) as exclusion_reason
-        , cast(1 as integer) as exclusion_flag
+        , cast(1 as {{ dbt.type_int() }}) as exclusion_flag
     from combined_exclusions
 
 )
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , exclusion_flag

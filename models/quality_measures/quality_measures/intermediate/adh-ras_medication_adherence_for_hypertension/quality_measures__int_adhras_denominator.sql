@@ -30,6 +30,7 @@ with performance_period as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , days_supply
@@ -41,6 +42,7 @@ with performance_period as (
 
     select
           pharmacy_claim.person_id
+        , pharmacy_claim.data_source
         , dispensing_date
         , days_supply
         , ndc_code
@@ -54,6 +56,7 @@ with performance_period as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , days_supply
         , ndc_code
@@ -75,10 +78,11 @@ with performance_period as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , days_supply
         , ndc_code
-        , dense_rank() over (partition by person_id
+        , dense_rank() over (partition by person_id, data_source
 order by dispensing_date) as dense_rank
     from patient_within_performance_period
 
@@ -88,6 +92,7 @@ order by dispensing_date) as dense_rank
 
     select
           person_id
+        , data_source
         , dispensing_date as first_dispensing_date
     from patient_with_rank
     where dense_rank = 1
@@ -102,6 +107,7 @@ treatment period days is abbreviated as tpd
 
     select
           patients1.person_id
+        , patients1.data_source
         , patients1.dispensing_date
         , patients2.first_dispensing_date
         , patients1.days_supply
@@ -109,6 +115,7 @@ treatment period days is abbreviated as tpd
     from patient_within_performance_period as patients1
     inner join patient_with_first_dispensing_date as patients2
         on patients1.person_id = patients2.person_id
+        and patients1.data_source = patients2.data_source
 
 )
 
@@ -116,6 +123,7 @@ treatment period days is abbreviated as tpd
 
     select
           person_id
+        , data_source
         , dispensing_date
         , first_dispensing_date
         , days_supply
@@ -128,6 +136,7 @@ treatment period days is abbreviated as tpd
 
     select
           person_id
+        , data_source
         , ndc_code
     from patient_with_rank
     where dense_rank = 2
@@ -138,6 +147,7 @@ treatment period days is abbreviated as tpd
 
     select
           valid_patients1.person_id
+        , valid_patients1.data_source
         , valid_patients1.dispensing_date
         , valid_patients1.first_dispensing_date
         , valid_patients1.days_supply
@@ -145,6 +155,7 @@ treatment period days is abbreviated as tpd
     from first_check_patient as valid_patients1
     inner join second_check_patient as valid_patients2
         on valid_patients1.person_id = valid_patients2.person_id
+        and valid_patients1.data_source = valid_patients2.data_source
 
 )
 
@@ -152,6 +163,7 @@ treatment period days is abbreviated as tpd
 
     select
           valid_patients1.person_id
+        , valid_patients1.data_source
         , floor({{ datediff('birth_date', 'pp.performance_period_begin', 'hour') }} / 8760.0) as age
         , dispensing_date
         , first_dispensing_date
@@ -165,6 +177,7 @@ treatment period days is abbreviated as tpd
     from {{ ref('quality_measures__stg_core__patient') }} as patient
     inner join both_check_patient as valid_patients1
         on patient.person_id = valid_patients1.person_id
+        and patient.data_source = valid_patients1.data_source
     cross join performance_period as pp
     where patient.death_date is null
 
@@ -174,6 +187,7 @@ treatment period days is abbreviated as tpd
 
     select
           person_id
+        , data_source
         , dispensing_date
         , first_dispensing_date
         , days_supply
@@ -193,6 +207,7 @@ treatment period days is abbreviated as tpd
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(dispensing_date as date) as dispensing_date
         , cast(first_dispensing_date as date) as first_dispensing_date
         , cast(days_supply as integer) as days_supply
@@ -202,13 +217,14 @@ treatment period days is abbreviated as tpd
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
         , cast(measure_name as {{ dbt.type_string() }}) as measure_name
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
-        , cast(denominator_flag as integer) as denominator_flag
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
     from qualifying_patients
 
 )
 
 select
       person_id
+    , data_source
     , dispensing_date
     , first_dispensing_date
     , days_supply

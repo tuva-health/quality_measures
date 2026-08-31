@@ -10,7 +10,23 @@ models:
       tags: quality_measures
       materialized: table
     description: Reporting measure counts with performance rates.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - data_source
+              - measure_id
+              - measure_version
+              - performance_period_begin
+              - performance_period_end
     columns:
+      - name: data_source
+        description: Source dataset associated with the measure population.
+        tests:
+          - not_null
+        config:
+          meta:
+            data_type: varchar
       - name: measure_id
         description: Unique measure identification number.
         config:
@@ -61,7 +77,7 @@ models:
           measure although they experience the denominator index event.
         config:
           meta:
-            data_type: varchar
+            data_type: integer
       - name: performance_rate
         description: >
           Calculated performance rate. The numerator sum divided by the
@@ -84,11 +100,28 @@ models:
       materialized: table
     description: >
       Long view of the results for the reporting version of all measures. Each
-      row represents the results a measure per patient. A null for the
+      row represents the results for a measure per patient and data source. A null for the
       denominator indicates that the patient was not eligible for that measure.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - person_id
+              - data_source
+              - measure_id
+              - measure_version
+              - performance_period_begin
+              - performance_period_end
     columns:
       - name: person_id
         description: Unique person_id for each person.
+        config:
+          meta:
+            data_type: varchar
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
+        tests:
+          - not_null
         config:
           meta:
             data_type: varchar
@@ -190,12 +223,25 @@ models:
       materialized: table
     description: >
       Wide view of the results for the reporting version of all measures. This
-      model pivots measures on the patient level (i.e. one row per patient with
-      flags for each measure. The false flags can be treated as care gaps as
+      model pivots measures on the patient and data-source level (i.e. one row per
+      patient and source) with flags for each measure. The false flags can be treated as care gaps as
       exclusions have been included in the pivot logic.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - person_id
+              - data_source
     columns:
       - name: person_id
         description: Unique person_id for each person.
+        config:
+          meta:
+            data_type: varchar
+      - name: data_source
+        description: Source dataset associated with the person and measure results.
+        tests:
+          - not_null
         config:
           meta:
             data_type: varchar
@@ -341,6 +387,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and criterion.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -368,6 +416,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and criterion.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -395,6 +445,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and criterion.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -421,6 +473,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: age
         description: Patient's age as of performance_period_begin date.
       - name: performance_period_begin
@@ -453,6 +507,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and exclusion.
       - name: exclusion_date
         description: >
           Date of event or service that excludes patient from the measure.
@@ -484,6 +540,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -537,6 +595,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and numerator evidence.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -586,6 +646,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: age
         description: Patient's age during latest encounter in the performance period.
       - name: procedure_encounter_date
@@ -623,6 +685,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and exclusion.
       - name: exclusion_date
         description: >
           Date of event or service that excludes patient from the measure.
@@ -654,6 +718,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -707,6 +773,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and numerator evidence.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -755,6 +823,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: age
         description: Patient's age during latest encounter in the performance period.
       - name: performance_period_begin
@@ -787,6 +857,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and exclusion.
       - name: exclusion_date
         description: >
           Date of event or service that excludes patient from the measure.
@@ -817,6 +889,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -870,6 +944,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and numerator evidence.
       - name: performance_period_begin
         description: Beginning date of the performance or measurement period.
       - name: performance_period_end
@@ -990,6 +1066,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -1148,9 +1226,13 @@ models:
     description: >
       Final preparation of the reporting version of ADH-RAS, Medication
       Adherence for Hypertension before combining with other measures.
+    tests:
+      - quality_measure_long_contract
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -1308,6 +1390,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may
@@ -1467,6 +1551,8 @@ models:
     columns:
       - name: person_id
         description: Unique person_id for each person.
+      - name: data_source
+        description: Source dataset associated with the person and measure result.
       - name: denominator_flag
         description: >
           The denominator is associated with a given patient population that may

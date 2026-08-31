@@ -1,0 +1,283 @@
+version: 2
+
+unit_tests:
+  - name: test_cqm438_denominator_does_not_cross_data_sources
+    description: >
+      Denominator criteria and a qualifying encounter in source A must not
+      qualify the same person identifier in source B.
+    model: quality_measures__int_cqm438_denominator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_cqm438_denominator_criteria1')
+        format: sql
+        rows: |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'CQM438' as measure_id
+            , 'Statin Therapy' as measure_name
+            , '2024' as measure_version
+      - input: ref('quality_measures__int_cqm438_denominator_criteria2')
+        format: sql
+        rows: &empty_criteria |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as performance_period_begin
+            , cast(null as date) as performance_period_end
+            , 'unused' as measure_id
+            , 'unused' as measure_name
+            , 'unused' as measure_version
+          where 1 = 0
+      - input: ref('quality_measures__int_cqm438_denominator_criteria3')
+        format: sql
+        rows: *empty_criteria
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'unused' as code
+            , 'unused' as code_system
+            , 'unused' as concept_name
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__encounter')
+        format: sql
+        rows: |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , cast('2024-06-01' as date) as encounter_start_date
+            , cast('2024-06-01' as date) as encounter_end_date
+            , 'home health' as encounter_type
+            , 'other' as encounter_group
+      - input: ref('quality_measures__int_cqm438__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as procedure_date
+            , 'unused' as normalized_code
+            , 'unused' as source_code
+          where 1 = 0
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as claim_start_date
+            , cast(null as date) as claim_end_date
+            , 'unused' as hcpcs_code
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__patient')
+        format: sql
+        rows: |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , cast('1970-01-01' as date) as birth_date
+            , cast(null as date) as death_date
+          union all
+          select
+              'shared_person'
+            , 'source_b'
+            , cast('1970-01-01' as date)
+            , cast(null as date)
+    expect:
+      rows:
+        - person_id: shared_person
+          data_source: source_a
+          denominator_flag: 1
+
+  - name: test_cqm438_numerator_does_not_cross_data_sources
+    description: >
+      Statin evidence in source A must not populate the numerator for the same
+      person identifier's denominator row in source B.
+    model: quality_measures__int_cqm438_numerator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_cqm438_denominator')
+        format: sql
+        rows: &two_source_denominator |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'CQM438' as measure_id
+            , 'Statin Therapy' as measure_name
+            , '2024' as measure_version
+          union all
+          select
+              'shared_person'
+            , 'source_b'
+            , cast('2024-01-01' as date)
+            , cast('2024-12-31' as date)
+            , 'CQM438'
+            , 'Statin Therapy'
+            , '2024'
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'statin_code' as code
+            , 'hcpcs' as code_system
+            , 'High Intensity Statin Therapy' as concept_name
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , cast('2024-06-01' as date) as procedure_date
+            , 'statin_code' as normalized_code
+            , 'hcpcs' as normalized_code_type
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+      - input: ref('quality_measures__stg_pharmacy_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as dispensing_date
+            , 'unused' as ndc_code
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__medication')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as dispensing_date
+            , cast(null as date) as prescribing_date
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+          where 1 = 0
+    expect:
+      rows:
+        - person_id: shared_person
+          data_source: source_a
+          evidence_date: '2024-06-01'
+          numerator_flag: 1
+
+  - name: test_cqm438_exclusions_do_not_cross_data_sources
+    description: >
+      Exclusion evidence in source A must not exclude the same person
+      identifier's denominator row in source B.
+    model: quality_measures__int_cqm438_exclusions
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_cqm438__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'liver_code' as code
+            , 'SNOMEDCT' as code_system
+            , 'Liver Disease' as concept_name
+      - input: ref('quality_measures__int_shared_exclusions_hospice_palliative')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as exclusion_date
+            , 'unused' as exclusion_reason
+            , 'unused' as exclusion_type
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__condition')
+        format: sql
+        rows: |
+          select
+              'shared_person' as person_id
+            , 'source_a' as data_source
+            , 'claim_1' as claim_id
+            , cast('2024-06-01' as date) as recorded_date
+            , 'liver_code' as normalized_code
+            , 'snomed-ct' as normalized_code_type
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , 'unused' as claim_id
+            , cast(null as date) as claim_start_date
+            , cast(null as date) as claim_end_date
+            , 'unused' as hcpcs_code
+            , 'unused' as place_of_service_code
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__observation')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as observation_date
+            , 'unused' as normalized_code
+            , 'unused' as normalized_code_type
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as procedure_date
+            , 'unused' as normalized_code
+            , 'unused' as normalized_code_type
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__medication')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as prescribing_date
+            , cast(null as date) as dispensing_date
+            , 'unused' as source_code
+            , 'unused' as source_code_type
+          where 1 = 0
+      - input: ref('quality_measures__stg_pharmacy_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'unused' as data_source
+            , cast(null as date) as dispensing_date
+            , 'unused' as ndc_code
+          where 1 = 0
+      - input: ref('quality_measures__int_cqm438_denominator')
+        format: sql
+        rows: *two_source_denominator
+    expect:
+      rows:
+        - person_id: shared_person
+          data_source: source_a
+          exclusion_date: '2024-06-01'
+          exclusion_reason: Liver Disease
+          exclusion_flag: 1

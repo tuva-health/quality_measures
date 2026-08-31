@@ -7,6 +7,7 @@
 
 select
       person_id
+    , data_source
     , encounter_id
     , prescribing_date
     , dispensing_date
@@ -21,6 +22,7 @@ from {{ ref('core__medication') }}
 
 select
       person_id
+    , data_source
     , encounter_id
     , prescribing_date   
     , dispensing_date
@@ -36,6 +38,7 @@ from {{ ref('core__medication') }}
 {% if target.type == 'fabric' %}
     select top 0
           cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as encounter_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as prescribing_date
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as dispensing_date
@@ -47,6 +50,7 @@ from {{ ref('core__medication') }}
 {% else %}
 select
           cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as encounter_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as prescribing_date
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as dispensing_date

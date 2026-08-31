@@ -1,0 +1,196 @@
+version: 2
+
+unit_tests:
+  - name: test_encounter_augmented_joins_on_encounter_and_source
+    description: >
+      Reused encounter IDs in different sources retain only the index, planned,
+      cohort, and data-quality attributes from their own source.
+    model: readmissions__encounter_augmented
+    config:
+      enabled: "{{ var('claims_enabled', False) | as_bool }}"
+    given:
+      - input: ref('readmissions__encounter')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as admit_date
+            , cast('2024-01-03' as date) as discharge_date
+            , '01' as discharge_disposition_code
+            , 'facility_a' as facility_npi
+            , 'ms-drg' as drg_code_type
+            , '001' as drg_code
+            , 100 as paid_amount
+          union all
+          select
+              'shared_encounter'
+            , 'person_1'
+            , 'source_b'
+            , cast('2024-01-01' as date)
+            , cast('2024-01-03' as date)
+            , '01'
+            , 'facility_b'
+            , 'ms-drg'
+            , '001'
+            , 100
+      - input: ref('readmissions__index_admission')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'source_a' as data_source
+      - input: ref('readmissions__planned_encounter')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'source_b' as data_source
+      - input: ref('readmissions__encounter_specialty_cohort')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'source_a' as data_source
+            , 'Medicine' as specialty_cohort
+          union all
+          select
+              'shared_encounter'
+            , 'source_b'
+            , 'Neurology'
+      - input: ref('readmissions__encounter_data_quality')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'source_a' as data_source
+            , '1' as diagnosis_ccs
+            , 0 as disqualified_encounter_flag
+            , 0 as missing_admit_date_flag
+            , 0 as missing_discharge_date_flag
+            , 0 as admit_after_discharge_flag
+            , 0 as missing_discharge_disposition_code_flag
+            , 0 as invalid_discharge_disposition_code_flag
+            , 0 as missing_primary_diagnosis_flag
+            , 0 as invalid_primary_diagnosis_code_flag
+            , 0 as no_diagnosis_ccs_flag
+            , 0 as overlaps_with_another_encounter_flag
+            , 0 as missing_drg_flag
+            , 0 as invalid_drg_flag
+          union all
+          select
+              'shared_encounter'
+            , 'source_b'
+            , '2'
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+            , 0
+    expect:
+      rows:
+        - encounter_id: shared_encounter
+          data_source: source_a
+          index_admission_flag: 1
+          planned_flag: 0
+          specialty_cohort: Medicine
+          diagnosis_ccs: '1'
+        - encounter_id: shared_encounter
+          data_source: source_b
+          index_admission_flag: 0
+          planned_flag: 1
+          specialty_cohort: Neurology
+          diagnosis_ccs: '2'
+
+  - name: test_readmission_summary_sequences_within_source
+    description: >
+      Encounters for the same person in another data source cannot become the
+      next readmission, even when raw encounter IDs are reused.
+    model: readmissions__readmission_summary
+    config:
+      enabled: "{{ var('claims_enabled', False) | as_bool }}"
+    given:
+      - input: ref('readmissions__encounter_augmented')
+        format: sql
+        rows: |
+          select
+              'shared_encounter' as encounter_id
+            , 'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as admit_date
+            , cast('2024-01-03' as date) as discharge_date
+            , '01' as discharge_disposition_code
+            , 'facility_a' as facility_npi
+            , 'ms-drg' as drg_code_type
+            , '001' as drg_code
+            , 100 as paid_amount
+            , 2 as length_of_stay
+            , 1 as index_admission_flag
+            , 0 as planned_flag
+            , 'Medicine' as specialty_cohort
+            , 0 as died_flag
+            , '1' as diagnosis_ccs
+            , 0 as disqualified_encounter_flag
+          union all
+          select
+              'source_a_second'
+            , 'person_1'
+            , 'source_a'
+            , cast('2024-01-10' as date)
+            , cast('2024-01-12' as date)
+            , '01'
+            , 'facility_a'
+            , 'ms-drg'
+            , '001'
+            , 100
+            , 2
+            , 1
+            , 0
+            , 'Medicine'
+            , 0
+            , '1'
+            , 0
+          union all
+          select
+              'shared_encounter'
+            , 'person_1'
+            , 'source_b'
+            , cast('2024-01-05' as date)
+            , cast('2024-01-06' as date)
+            , '01'
+            , 'facility_b'
+            , 'ms-drg'
+            , '001'
+            , 100
+            , 2
+            , 1
+            , 0
+            , 'Medicine'
+            , 0
+            , '1'
+            , 0
+    expect:
+      rows:
+        - encounter_id: shared_encounter
+          data_source: source_a
+          had_readmission_flag: 1
+          days_to_readmit: 7
+          readmission_encounter_id: source_a_second
+        - encounter_id: source_a_second
+          data_source: source_a
+          had_readmission_flag: 0
+          days_to_readmit: null
+          readmission_encounter_id: null
+        - encounter_id: shared_encounter
+          data_source: source_b
+          had_readmission_flag: 0
+          days_to_readmit: null
+          readmission_encounter_id: null

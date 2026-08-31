@@ -9,6 +9,7 @@ with lab_order as (
 
     select
           person_id
+        , data_source
         , result
         , result_datetime as result_date
         , collection_datetime as collection_date
@@ -23,6 +24,7 @@ with lab_order as (
 
     select
           person_id
+        , data_source
         , result
         , result_datetime as result_date
         , collection_datetime as collection_date
@@ -43,6 +45,7 @@ with lab_order as (
 
 select distinct
       person_id
+    , data_source
     , result
     , result_date
     , collection_date
@@ -56,6 +59,7 @@ with lab_order as (
 
     select
           person_id
+        , data_source
         , result
         , result_datetime as result_date
         , collection_datetime as collection_date
@@ -70,6 +74,7 @@ with lab_order as (
 
     select
           person_id
+        , data_source
         , result
         , result_datetime as result_date
         , collection_datetime as collection_date
@@ -90,6 +95,7 @@ with lab_order as (
 
 select distinct
       person_id
+    , data_source
     , result
     , result_date
     , collection_date
@@ -101,6 +107,7 @@ from unioned
 
 select {% if target.type == 'fabric' %} top 0 {% else %}{% endif %}
       cast(null as {{ dbt.type_string() }} ) as person_id
+    , cast(null as {{ dbt.type_string() }} ) as data_source
     , cast(null as {{ dbt.type_string() }} ) as result
     , {{ the_tuva_project.try_to_cast_datetime('null') }} as result_date
     , {{ the_tuva_project.try_to_cast_datetime('null') }} as collection_date
