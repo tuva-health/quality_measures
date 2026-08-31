@@ -17,6 +17,7 @@ clean-targets:
 
 vars:
   tuva_last_run: '{{ run_started_at.astimezone(modules.pytz.timezone("UTC")) }}'
+  quality_measures_data_asset_version: '1.0.0'
   # To run quality measures for a period other than current year, uncomment below.
   # quality_measures_period_end: "2020-12-31"
 
@@ -25,31 +26,31 @@ seeds:
     value_sets:
       quality_measures:
         quality_measures__concepts:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'quality_measures__concepts.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'quality_measures__concepts.csv.gz') }}"
         quality_measures__measures:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'quality_measures__measures.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'quality_measures__measures.csv.gz') }}"
         quality_measures__value_sets:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'quality_measures__value_sets.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'quality_measures__value_sets.csv.gz') }}"
       readmissions:
         readmissions__acute_diagnosis_ccs:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__acute_diagnosis_ccs.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__acute_diagnosis_ccs.csv.gz') }}"
         readmissions__acute_diagnosis_icd_10_cm:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__acute_diagnosis_icd_10_cm.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__acute_diagnosis_icd_10_cm.csv.gz') }}"
         readmissions__always_planned_ccs_diagnosis_category:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__always_planned_ccs_diagnosis_category.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__always_planned_ccs_diagnosis_category.csv.gz') }}"
         readmissions__always_planned_ccs_procedure_category:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__always_planned_ccs_procedure_category.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__always_planned_ccs_procedure_category.csv.gz') }}"
         readmissions__exclusion_ccs_diagnosis_category:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__exclusion_ccs_diagnosis_category.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__exclusion_ccs_diagnosis_category.csv.gz') }}"
         readmissions__icd_10_cm_to_ccs:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__icd_10_cm_to_ccs.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__icd_10_cm_to_ccs.csv.gz') }}"
         readmissions__icd_10_pcs_to_ccs:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__icd_10_pcs_to_ccs.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__icd_10_pcs_to_ccs.csv.gz') }}"
         readmissions__potentially_planned_ccs_procedure_category:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__potentially_planned_ccs_procedure_category.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__potentially_planned_ccs_procedure_category.csv.gz') }}"
         readmissions__potentially_planned_icd_10_pcs:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__potentially_planned_icd_10_pcs.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__potentially_planned_icd_10_pcs.csv.gz') }}"
         readmissions__specialty_cohort:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__specialty_cohort.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__specialty_cohort.csv.gz') }}"
         readmissions__surgery_gynecology_cohort:
-          +post-hook: "{{ the_tuva_project.load_package_seed('quality-measures', quality_measures.get_quality_measures_package_version(), 'readmissions__surgery_gynecology_cohort.csv.gz') }}"
+          +post-hook: "{{ the_tuva_project.load_package_seed('data-marts/quality-measures', var('quality_measures_data_asset_version'), 'readmissions__surgery_gynecology_cohort.csv.gz') }}"
