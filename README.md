@@ -4,13 +4,13 @@ dbt package for the Tuva Project Quality Measures data mart.
 
 ## Data assets
 
-Released seed contents are stored as an immutable snapshot under
-`s3://tuva-public-resources/quality-measures/<package-version>/`. The
-checked-in CSV files define the dbt loader headers, and `data_assets.yml` is
-the publisher inventory. Dataset changes are released with a new package
-version.
+Seed contents load from
+`s3://tuva-public-resources/data-marts/quality-measures/<asset-version>/`.
+The checked-in CSV files are header-only dbt loader contracts; their seed YAML
+defines the relations, types, and tests.
 
-On a version-changing push to `main`, or a manual recovery from current
-`main`, release automation verifies the exact, commit-bound, byte-identical
-`_release.json` receipt in S3, GCS, and Azure before creating the
-`v<package-version>` tag and draft GitHub release.
+`quality_measures_data_asset_version` selects the folder and defaults to
+`1.0.0`. The data-asset version is intentionally independent of this package's
+code version, and maintainers coordinate the two values when an asset changes.
+Cloud `_manifest.json` and `_release.json` files are maintenance metadata and
+are not read by dbt at runtime.
