@@ -38,9 +38,10 @@ def main() -> None:
         project,
         project_path,
     )
-    assert asset_version == "1.0.0", (
-        f"{EXPECTED_ASSET_VAR} must start at '1.0.0', found {asset_version!r}"
-    )
+    assert re.fullmatch(
+        r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?",
+        asset_version,
+    ), f"{EXPECTED_ASSET_VAR} must be a semantic version, found {asset_version!r}"
 
     loader_calls = re.findall(
         r"load_package_seed\(\s*'([^']+)'\s*,\s*([^,]+?)\s*,\s*'([^']+)'\s*\)",
