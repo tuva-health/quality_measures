@@ -94,10 +94,10 @@ with visit_codes as (
         , data_source
         , procedure_encounter_date
         , claims_encounter_date
-        , case when procedure_encounter_date >= claims_encounter_date
-                then procedure_encounter_date
-            else claims_encounter_date
-          end as max_encounter_date
+        , {{ the_tuva_project.greatest(
+              "procedure_encounter_date"
+            , "claims_encounter_date"
+          ) }} as max_encounter_date
         , {{ the_tuva_project.concat_custom([
               "coalesce(min(visit_enc), '')"
             , "coalesce(min(proc_enc), '')"

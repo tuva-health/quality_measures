@@ -76,6 +76,76 @@ unit_tests:
           data_source: source_a
           denominator_flag: 1
 
+  - name: test_cqm130_denominator_accepts_procedure_only_encounter
+    description: >
+      A qualifying procedure supplies the encounter date when no claims date
+      exists, so the patient remains eligible for the denominator.
+    model: quality_measures__int_cqm130_denominator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              '99201' as code
+            , 'hcpcs' as code_system
+            , 'Encounter to Document Medications' as concept_name
+      - input: ref('quality_measures__stg_core__encounter')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as encounter_start_date
+            , cast('2024-01-15' as date) as encounter_end_date
+            , 'unused' as encounter_type
+            , 'unused' as encounter_group
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-06-15' as date) as procedure_date
+            , '99201' as normalized_code
+            , '99201' as source_code
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as claim_start_date
+            , cast('2024-01-15' as date) as claim_end_date
+            , 'unused' as hcpcs_code
+          where 1 = 0
+      - input: ref('quality_measures__int_cqm130__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'CQM130' as measure_id
+            , 'Documentation of Current Medications' as measure_name
+            , '2024' as measure_version
+      - input: ref('quality_measures__stg_core__patient')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('1980-01-01' as date) as birth_date
+            , cast(null as date) as death_date
+    expect:
+      rows:
+        - person_id: person_1
+          data_source: source_a
+          procedure_encounter_date: '2024-06-15'
+          claims_encounter_date: null
+          denominator_flag: 1
+
   - name: test_cqm130_numerator_scopes_evidence_to_data_source
     description: >
       Numerator evidence in one source must not qualify a denominator row in
