@@ -6,7 +6,8 @@
 with summary_long as (
 
     select
-          measure_id
+          data_source
+        , measure_id
         , measure_name
         , measure_version
         , performance_period_begin
@@ -23,7 +24,8 @@ with summary_long as (
 , calculate_performance_rate as (
 
     select
-          measure_id
+          data_source
+        , measure_id
         , measure_name
         , measure_version
         , performance_period_begin
@@ -33,11 +35,12 @@ with summary_long as (
         , sum(exclusion_flag) as exclusion_sum
         , (
             cast(sum(performance_flag) as {{ dbt.type_numeric() }}) /
-                (cast(count(performance_flag) as {{ dbt.type_numeric() }}))
+                nullif(cast(count(performance_flag) as {{ dbt.type_numeric() }}), 0)
           ) * 100 as performance_rate
     from summary_long
     group by
-          measure_id
+          data_source
+        , measure_id
         , measure_name
         , measure_version
         , performance_period_begin
@@ -48,7 +51,8 @@ with summary_long as (
 , add_data_types as (
 
     select
-          cast(measure_id as {{ dbt.type_string() }}) as measure_id
+          cast(data_source as {{ dbt.type_string() }}) as data_source
+        , cast(measure_id as {{ dbt.type_string() }}) as measure_id
         , cast(measure_name as {{ dbt.type_string() }}) as measure_name
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
         , cast(performance_period_begin as date) as performance_period_begin
@@ -62,7 +66,8 @@ with summary_long as (
 )
 
 select
-      measure_id
+      data_source
+    , measure_id
     , measure_name
     , measure_version
     , performance_period_begin

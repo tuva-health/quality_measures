@@ -7,6 +7,7 @@
 
 select
       person_id
+    , data_source
     , dispensing_date
     , ndc_code
     , days_supply
@@ -18,6 +19,7 @@ from {{ ref('core__pharmacy_claim') }}
 
 select
       person_id
+    , data_source
     , dispensing_date
     , ndc_code
     , days_supply
@@ -30,6 +32,7 @@ from {{ ref('core__pharmacy_claim') }}
 {% if target.type == 'fabric' %}
     select top 0
       cast(null as {{ dbt.type_string() }} ) as person_id
+    , cast(null as {{ dbt.type_string() }} ) as data_source
     , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as dispensing_date
     , cast(null as {{ dbt.type_string() }} ) as ndc_code
     , cast(null as {{ dbt.type_int() }} ) as days_supply
@@ -38,6 +41,7 @@ from {{ ref('core__pharmacy_claim') }}
 {% else %}
     select
       cast(null as {{ dbt.type_string() }} ) as person_id
+    , cast(null as {{ dbt.type_string() }} ) as data_source
     , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as dispensing_date
     , cast(null as {{ dbt.type_string() }} ) as ndc_code
     , cast(null as {{ dbt.type_int() }} ) as days_supply

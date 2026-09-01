@@ -20,6 +20,7 @@ with diabetes_codes as (
 
     select
           person_id
+        , data_source
         , claim_id
         , encounter_id
         , recorded_date
@@ -35,6 +36,7 @@ with diabetes_codes as (
 
     select
           conditions.person_id
+        , conditions.data_source
         , conditions.recorded_date as evidence_date
     from conditions
     inner join diabetes_codes
@@ -48,6 +50,7 @@ with diabetes_codes as (
     select
         distinct
           person_id
+        , data_source
         , performance_period_begin
         , performance_period_end
         , measure_id
@@ -63,6 +66,7 @@ with diabetes_codes as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(performance_period_begin as date) as performance_period_begin
         , cast(performance_period_end as date) as performance_period_end
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
@@ -74,6 +78,7 @@ with diabetes_codes as (
 
 select
       person_id
+    , data_source
     , performance_period_begin
     , performance_period_end
     , measure_id

@@ -20,6 +20,7 @@ with visit_codes as (
 
     select
           person_id
+        , encounter.data_source
         , coalesce(encounter.encounter_start_date, encounter.encounter_end_date) as procedure_encounter_date -- alias only to enable union later
         , coalesce(encounter.encounter_end_date, encounter.encounter_start_date) as claims_encounter_date -- alias only to enable union later
     from {{ ref('quality_measures__stg_core__encounter') }} as encounter
@@ -42,6 +43,7 @@ with visit_codes as (
 
     select
           person_id
+        , procs.data_source
         , procedure_date as procedure_encounter_date
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as claims_encounter_date
     from {{ ref('quality_measures__stg_core__procedure') }} as procs
@@ -56,6 +58,7 @@ with visit_codes as (
 
     select
           person_id
+        , medical_claim.data_source
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as procedure_encounter_date
         , coalesce(claim_end_date, claim_start_date) as claims_encounter_date
     from {{ ref('quality_measures__stg_medical_claim') }} as medical_claim
@@ -88,19 +91,20 @@ with visit_codes as (
 
     select
           person_id
+        , data_source
         , procedure_encounter_date
         , claims_encounter_date
-        , case when procedure_encounter_date >= claims_encounter_date
-                then procedure_encounter_date
-            else claims_encounter_date
-          end as max_encounter_date
+        , {{ the_tuva_project.greatest(
+              "procedure_encounter_date"
+            , "claims_encounter_date"
+          ) }} as max_encounter_date
         , {{ the_tuva_project.concat_custom([
               "coalesce(min(visit_enc), '')"
             , "coalesce(min(proc_enc), '')"
             , "coalesce(min(claim_enc), '')"
         ]) }} as qualifying_types
     from all_encounters
-    group by person_id, procedure_encounter_date, claims_encounter_date
+    group by person_id, data_source, procedure_encounter_date, claims_encounter_date
 
 )
 
@@ -108,9 +112,10 @@ with visit_codes as (
 
 	select
 		  person_id
+		, data_source
 		, max(max_encounter_date) as max_encounter_date
 	from multiple_encounters_by_patient
-	group by person_id
+	group by person_id, data_source
 
 )
 
@@ -118,12 +123,14 @@ with visit_codes as (
 
 	select
 		  max_encounter_dates_by_patient.person_id
+		, max_encounter_dates_by_patient.data_source
 		, max_encounter_dates_by_patient.max_encounter_date
 		, procedure_encounter_date
 		, claims_encounter_date
 	from max_encounter_dates_by_patient
 	inner join multiple_encounters_by_patient
 		on max_encounter_dates_by_patient.person_id = multiple_encounters_by_patient.person_id
+			and max_encounter_dates_by_patient.data_source = multiple_encounters_by_patient.data_source
 
 )
 
@@ -131,12 +138,14 @@ with visit_codes as (
 
     select
           p.person_id
+        , p.data_source
         , procedure_encounter_date
         , claims_encounter_date
         , floor({{ datediff('birth_date', 'e.max_encounter_date', 'hour') }} / 8760.0) as max_age
     from {{ ref('quality_measures__stg_core__patient') }} as p
     inner join latest_patient_encounters as e
         on p.person_id = e.person_id
+            and p.data_source = e.data_source
     where p.death_date is null
 
 )
@@ -146,6 +155,7 @@ with visit_codes as (
     select
         distinct
           patients_with_age.person_id
+        , patients_with_age.data_source
         , patients_with_age.max_age as age
         , patients_with_age.procedure_encounter_date
         , patients_with_age.claims_encounter_date
@@ -165,6 +175,7 @@ with visit_codes as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(age as integer) as age
         , cast(performance_period_begin as date) as performance_period_begin
         , cast(performance_period_end as date) as performance_period_end
@@ -173,13 +184,14 @@ with visit_codes as (
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
         , cast(procedure_encounter_date as date) as procedure_encounter_date
         , cast(claims_encounter_date as date) as claims_encounter_date
-        , cast(denominator_flag as integer) as denominator_flag
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
     from qualifying_patients
 
 )
 
 select
       person_id
+    , data_source
     , age
     , procedure_encounter_date
     , claims_encounter_date

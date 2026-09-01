@@ -13,6 +13,7 @@ with encounter_info as (
 select
     enc.encounter_id
     , enc.person_id
+    , enc.data_source
     , enc.admit_date
     , enc.discharge_date
 from {{ ref('readmissions__encounter') }} as enc
@@ -23,18 +24,21 @@ where
     and
     admit_date <= discharge_date
 and not exists (select 1 from {{ ref('readmissions__encounter_overlap') }} as overlap
-                         where overlap.encounter_id = enc.encounter_id and overlap.is_best_encounter = 0)
+                         where overlap.encounter_id = enc.encounter_id
+                           and overlap.data_source = enc.data_source
+                           and overlap.is_best_encounter = 0)
     )
 
 , encounter_sequence as (
 select
     encounter_id
     , person_id
+    , data_source
     , admit_date
     , discharge_date
     , row_number() over (
-        partition by person_id
-order by admit_date, discharge_date
+        partition by person_id, data_source
+        order by admit_date, discharge_date, encounter_id
     ) as encounter_seq
 from encounter_info
 )
@@ -44,6 +48,7 @@ from encounter_info
 select
     aa.encounter_id
     , aa.person_id
+    , aa.data_source
     , aa.admit_date
     , aa.discharge_date
     , case
@@ -57,6 +62,7 @@ select
     end as readmit_30_flag
 from encounter_sequence as aa left outer join encounter_sequence as bb
      on aa.person_id = bb.person_id
+     and aa.data_source = bb.data_source
      and aa.encounter_seq + 1 = bb.encounter_seq
 )
 

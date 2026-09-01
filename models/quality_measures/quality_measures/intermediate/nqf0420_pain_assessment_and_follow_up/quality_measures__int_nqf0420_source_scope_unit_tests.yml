@@ -1,0 +1,212 @@
+version: 2
+
+unit_tests:
+  - name: test_nqf0420_denominator_scopes_encounters_to_data_source
+    description: >
+      A qualifying encounter in one source must not create a denominator row
+      for the same person in another source.
+    model: quality_measures__int_nqf0420_denominator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'unused' as code
+            , 'unused' as code_system
+            , 'unused' as concept_name
+          where 1 = 0
+      - input: ref('quality_measures__stg_core__encounter')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as encounter_start_date
+            , cast('2024-01-15' as date) as encounter_end_date
+            , 'office visit' as encounter_type
+            , 'office based' as encounter_group
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as procedure_date
+            , 'unused' as normalized_code_type
+            , 'unused' as source_code_type
+            , 'unused' as normalized_code
+            , 'unused' as source_code
+            , 'unused' as modifier_1
+            , 'unused' as modifier_2
+            , 'unused' as modifier_3
+            , 'unused' as modifier_4
+            , 'unused' as modifier_5
+          where 1 = 0
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as claim_start_date
+            , cast('2024-01-15' as date) as claim_end_date
+            , 'unused' as hcpcs_code
+            , 'unused' as hcpcs_modifier_1
+            , 'unused' as hcpcs_modifier_2
+            , 'unused' as hcpcs_modifier_3
+            , 'unused' as hcpcs_modifier_4
+            , 'unused' as hcpcs_modifier_5
+            , 'unused' as place_of_service_code
+          where 1 = 0
+      - input: ref('quality_measures__int_nqf0420__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'NQF0420' as measure_id
+            , 'Pain Assessment and Follow-Up' as measure_name
+            , '2024' as measure_version
+      - input: ref('quality_measures__stg_core__patient')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('1980-01-01' as date) as birth_date
+            , cast(null as date) as death_date
+          union all
+          select
+              'person_1'
+            , 'source_b'
+            , cast('1980-01-01' as date)
+            , cast(null as date)
+    expect:
+      rows:
+        - person_id: person_1
+          data_source: source_a
+          denominator_flag: 1
+
+  - name: test_nqf0420_numerator_scopes_evidence_to_data_source
+    description: >
+      Numerator evidence in one source must not qualify a denominator row in
+      another source for the same person.
+    model: quality_measures__int_nqf0420_numerator
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_nqf0420_denominator')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+            , 'NQF0420' as measure_id
+            , 'Pain Assessment and Follow-Up' as measure_name
+            , '2024' as measure_version
+          union all
+          select
+              'person_1'
+            , 'source_b'
+            , cast('2024-01-01' as date)
+            , cast('2024-12-31' as date)
+            , 'NQF0420'
+            , 'Pain Assessment and Follow-Up'
+            , '2024'
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'PAIN_ASSESSMENT' as code
+            , 'hcpcs' as code_system
+            , 'Pain Assessment Documented' as concept_name
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-03-15' as date) as procedure_date
+            , 'hcpcs' as normalized_code_type
+            , 'hcpcs' as source_code_type
+            , 'PAIN_ASSESSMENT' as normalized_code
+            , 'PAIN_ASSESSMENT' as source_code
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as claim_start_date
+            , cast('2024-01-15' as date) as claim_end_date
+            , 'unused' as hcpcs_code
+          where 1 = 0
+    expect:
+      rows:
+        - person_id: person_1
+          data_source: source_a
+          evidence_date: '2024-03-15'
+          numerator_flag: 1
+
+  - name: test_nqf0420_exclusions_scope_evidence_to_data_source
+    description: >
+      Exclusion evidence in one source must not exclude a denominator row in
+      another source for the same person.
+    model: quality_measures__int_nqf0420_exclusions
+    config:
+      enabled: "{{ var('claims_enabled', var('clinical_enabled', False)) | as_bool }}"
+    given:
+      - input: ref('quality_measures__int_nqf0420__performance_period')
+        format: sql
+        rows: |
+          select
+              cast('2024-01-01' as date) as performance_period_begin
+            , cast('2024-12-31' as date) as performance_period_end
+      - input: ref('quality_measures__int_nqf0420_denominator')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+          union all
+          select
+              'person_1'
+            , 'source_b'
+      - input: ref('quality_measures__value_sets')
+        format: sql
+        rows: |
+          select
+              'PAIN_EXCLUSION' as code
+            , 'hcpcs' as code_system
+            , 'Patient Is Not Eligible for a Pain Assessment' as concept_name
+      - input: ref('quality_measures__stg_core__procedure')
+        format: sql
+        rows: |
+          select
+              'person_1' as person_id
+            , 'source_a' as data_source
+            , cast('2024-04-15' as date) as procedure_date
+            , 'hcpcs' as normalized_code_type
+            , 'hcpcs' as source_code_type
+            , 'PAIN_EXCLUSION' as normalized_code
+            , 'PAIN_EXCLUSION' as source_code
+      - input: ref('quality_measures__stg_medical_claim')
+        format: sql
+        rows: |
+          select
+              'unused' as person_id
+            , 'source_a' as data_source
+            , cast('2024-01-15' as date) as claim_start_date
+            , cast('2024-01-15' as date) as claim_end_date
+            , 'unused' as hcpcs_code
+          where 1 = 0
+    expect:
+      rows:
+        - person_id: person_1
+          data_source: source_a
+          exclusion_date: '2024-04-15'
+          exclusion_flag: 1

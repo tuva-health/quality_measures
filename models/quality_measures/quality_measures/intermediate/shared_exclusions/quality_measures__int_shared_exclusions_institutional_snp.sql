@@ -18,6 +18,7 @@ with patients as (
 
     select
           person_id
+        , data_source
     from {{ ref('quality_measures__stg_core__patient') }}
 
 )
@@ -26,6 +27,7 @@ with patients as (
 
     select
           person_id
+        , data_source
         , claim_start_date
         , claim_end_date
         , hcpcs_code
@@ -38,6 +40,7 @@ with patients as (
 
     select
           patients.person_id
+        , patients.data_source
         , coalesce(
               medical_claim.claim_start_date
             , medical_claim.claim_end_date
@@ -46,6 +49,7 @@ with patients as (
     from patients
          inner join medical_claim
          on patients.person_id = medical_claim.person_id
+         and patients.data_source = medical_claim.data_source
     where place_of_service_code in ('32', '33', '34', '54', '56')
     and {{ datediff('medical_claim.claim_start_date', 'medical_claim.claim_end_date', 'day') }} >= 90
 
@@ -53,6 +57,7 @@ with patients as (
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , 'institutional_snp' as exclusion_type

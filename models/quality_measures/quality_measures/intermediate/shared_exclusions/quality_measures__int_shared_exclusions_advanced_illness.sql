@@ -7,6 +7,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from {{ ref('quality_measures__int_shared_exclusions_frailty') }}
@@ -36,6 +37,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , claim_id
         , recorded_date
         , coalesce(
@@ -57,6 +59,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , claim_id
         , claim_start_date
         , claim_end_date
@@ -70,6 +73,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , procedure_date
         , coalesce(
               normalized_code_type
@@ -91,6 +95,7 @@ with patients_with_frailty as (
 
     select
           conditions.person_id
+        , conditions.data_source
         , conditions.claim_id
         , conditions.recorded_date
         , exclusion_codes.concept_name
@@ -106,6 +111,7 @@ with patients_with_frailty as (
 
     select
           medical_claim.person_id
+        , medical_claim.data_source
         , medical_claim.claim_id
         , medical_claim.claim_start_date
         , medical_claim.claim_end_date
@@ -122,6 +128,7 @@ with patients_with_frailty as (
 
     select
           procedures.person_id
+        , procedures.data_source
         , procedures.procedure_date
         , exclusion_codes.concept_name
     from procedures
@@ -135,6 +142,7 @@ with patients_with_frailty as (
 
     select distinct
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , coalesce(
               med_claim_exclusions.claim_start_date
             , med_claim_exclusions.claim_end_date
@@ -152,14 +160,17 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join med_claim_exclusions
             on patients_with_frailty.person_id = med_claim_exclusions.person_id
+            and patients_with_frailty.data_source = med_claim_exclusions.data_source
          inner join condition_exclusions
             on med_claim_exclusions.claim_id = condition_exclusions.claim_id
+            and med_claim_exclusions.data_source = condition_exclusions.data_source
     where lower(med_claim_exclusions.concept_name) = 'acute inpatient'
 
     union all
 
     select distinct
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , procedure_exclusions.procedure_date as exclusion_date
         , {{ the_tuva_project.concat_custom([
                  "patients_with_frailty.exclusion_reason",
@@ -174,8 +185,10 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join procedure_exclusions
          on patients_with_frailty.person_id = procedure_exclusions.person_id
+         and patients_with_frailty.data_source = procedure_exclusions.data_source
          inner join condition_exclusions
          on procedure_exclusions.person_id = condition_exclusions.person_id
+         and procedure_exclusions.data_source = condition_exclusions.data_source
          and procedure_exclusions.procedure_date = condition_exclusions.recorded_date
     where lower(procedure_exclusions.concept_name) = 'acute inpatient'
 
@@ -185,6 +198,7 @@ with patients_with_frailty as (
 
     select distinct
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , coalesce(
               med_claim_exclusions.claim_start_date
             , med_claim_exclusions.claim_end_date
@@ -202,8 +216,10 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join med_claim_exclusions
             on patients_with_frailty.person_id = med_claim_exclusions.person_id
+            and patients_with_frailty.data_source = med_claim_exclusions.data_source
          inner join condition_exclusions
             on med_claim_exclusions.claim_id = condition_exclusions.claim_id
+            and med_claim_exclusions.data_source = condition_exclusions.data_source
     where lower(med_claim_exclusions.concept_name) in (
               'encounter inpatient'
             , 'outpatient'
@@ -216,6 +232,7 @@ with patients_with_frailty as (
 
     select distinct
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , procedure_exclusions.procedure_date as exclusion_date
         , {{ the_tuva_project.concat_custom([
                  "patients_with_frailty.exclusion_reason",
@@ -230,8 +247,10 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join procedure_exclusions
          on patients_with_frailty.person_id = procedure_exclusions.person_id
+         and patients_with_frailty.data_source = procedure_exclusions.data_source
          inner join condition_exclusions
          on procedure_exclusions.person_id = condition_exclusions.person_id
+         and procedure_exclusions.data_source = condition_exclusions.data_source
          and procedure_exclusions.procedure_date = condition_exclusions.recorded_date
     where lower(procedure_exclusions.concept_name) in (
           'encounter inpatient'
@@ -247,6 +266,7 @@ with patients_with_frailty as (
 
     select
           acute_inpatient.person_id
+        , acute_inpatient.data_source
         , acute_inpatient.exclusion_date
         , acute_inpatient.exclusion_reason
         , acute_inpatient.claim_start_date
@@ -259,6 +279,7 @@ with patients_with_frailty as (
 
     select
           nonacute_outpatient.person_id
+        , nonacute_outpatient.data_source
         , nonacute_outpatient.exclusion_date
         , nonacute_outpatient.exclusion_reason
         , nonacute_outpatient.claim_start_date
@@ -271,6 +292,7 @@ with patients_with_frailty as (
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , 'advanced_illness' as exclusion_type

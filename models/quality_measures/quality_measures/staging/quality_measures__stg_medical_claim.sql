@@ -7,6 +7,7 @@
 
 select
       person_id
+    , data_source
     , claim_id
     , claim_start_date
     , claim_end_date
@@ -24,6 +25,7 @@ from {{ ref('core__medical_claim') }}
 
 select
       person_id
+    , data_source
     , claim_id
     , claim_start_date
     , claim_end_date
@@ -42,6 +44,7 @@ from {{ ref('core__medical_claim') }}
 {% if target.type == 'fabric' %}
     select top 0
          cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as claim_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as claim_start_date
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as claim_end_date
@@ -56,6 +59,7 @@ from {{ ref('core__medical_claim') }}
 {% else %}
 select
          cast(null as {{ dbt.type_string() }} ) as person_id
+        , cast(null as {{ dbt.type_string() }} ) as data_source
         , cast(null as {{ dbt.type_string() }} ) as claim_id
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as claim_start_date
         , {{ the_tuva_project.try_to_cast_date('null', 'YYYY-MM-DD') }} as claim_end_date

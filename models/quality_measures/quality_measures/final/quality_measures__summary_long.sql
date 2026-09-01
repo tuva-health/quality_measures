@@ -24,7 +24,7 @@ with union_measures as (
 
 , patient as (
 
-    select distinct person_id
+    select distinct person_id, data_source
     from {{ ref('quality_measures__stg_core__patient') }}
 
 )
@@ -34,6 +34,7 @@ with union_measures as (
 
     select distinct
           patient.person_id
+        , patient.data_source
         , union_measures.denominator_flag
         , union_measures.numerator_flag
         , union_measures.exclusion_flag
@@ -55,16 +56,18 @@ with union_measures as (
     from patient
         left outer join union_measures
             on patient.person_id = union_measures.person_id
+            and patient.data_source = union_measures.data_source
 )
 
 , add_data_types as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
-        , cast(denominator_flag as integer) as denominator_flag
-        , cast(numerator_flag as integer) as numerator_flag
-        , cast(exclusion_flag as integer) as exclusion_flag
-        , cast(performance_flag as integer) as performance_flag
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
+        , cast(numerator_flag as {{ dbt.type_int() }}) as numerator_flag
+        , cast(exclusion_flag as {{ dbt.type_int() }}) as exclusion_flag
+        , cast(performance_flag as {{ dbt.type_int() }}) as performance_flag
         , cast(evidence_date as date) as evidence_date
         , cast(evidence_value as {{ dbt.type_string() }}) as evidence_value
         , cast(exclusion_date as date) as exclusion_date
@@ -80,6 +83,7 @@ with union_measures as (
 
 select
       person_id
+    , data_source
     , denominator_flag
     , numerator_flag
     , exclusion_flag

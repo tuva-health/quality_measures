@@ -15,7 +15,7 @@
 -- excluded because they belong to one of the
 -- exclusion categories
 with exclusions as (
-select distinct encounter_id
+select distinct encounter_id, data_source
 from {{ ref('readmissions__encounter_with_ccs') }}
 where
 (ccs_diagnosis_category is not null)

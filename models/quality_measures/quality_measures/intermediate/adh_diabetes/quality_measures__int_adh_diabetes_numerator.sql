@@ -7,6 +7,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , days_supply
@@ -39,13 +40,18 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , days_supply
-        , dense_rank() over (partition by person_id
-order by dispensing_date) as dr
-        , lag(ndc_code) over (partition by person_id
-order by dispensing_date) as previous_ndc
+        , dense_rank() over (
+            partition by person_id, data_source
+            order by dispensing_date
+          ) as dr
+        , lag(ndc_code) over (
+            partition by person_id, data_source
+            order by dispensing_date
+          ) as previous_ndc
     from denominator
 
 )
@@ -54,6 +60,7 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , days_supply
@@ -70,11 +77,12 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , ndc_code
         , dispensing_date
         , days_supply
         , sum(med_change_flag) over (
-              partition by person_id
+              partition by person_id, data_source
               order by dr
               rows between unbounded preceding and current row
           ) as group_id
@@ -92,6 +100,7 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , dispensing_date
         , days_supply
@@ -113,6 +122,7 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , dispensing_date
         , days_supply
@@ -120,6 +130,7 @@ order by dispensing_date) as previous_ndc
         , lag(theoretical_end_date)
           over (partition by
                 person_id
+              , data_source
               , group_id
             order by
                 dispensing_date
@@ -134,6 +145,7 @@ order by dispensing_date) as previous_ndc
     or use the current rx_fill_date */
     select
           person_id
+        , data_source
         , group_id
         , dispensing_date
         , days_supply
@@ -156,12 +168,13 @@ order by dispensing_date) as previous_ndc
 , final_fills as (
 
     select
-        person_id
-      , group_id
-      , dispensing_date
-      , days_supply
-      , adjusted_start_date
-      , {{ the_tuva_project.least(
+          person_id
+        , data_source
+        , group_id
+        , dispensing_date
+        , days_supply
+        , adjusted_start_date
+        , {{ the_tuva_project.least(
             dbt.dateadd (
                 datepart = "day"
               , interval = -1
@@ -184,13 +197,14 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , dispensing_date
         , days_supply
         , adjusted_start_date
         , final_end_date
-        , min(adjusted_start_date) over (partition by person_id, group_id) as first_disp_date
-        , max(adjusted_start_date) over (partition by person_id, group_id) as last_disp_date
+        , min(adjusted_start_date) over (partition by person_id, data_source, group_id) as first_disp_date
+        , max(adjusted_start_date) over (partition by person_id, data_source, group_id) as last_disp_date
     from final_fills
 
 )
@@ -199,6 +213,7 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , dispensing_date
         , days_supply
@@ -211,7 +226,7 @@ order by dispensing_date) as previous_ndc
               when adjusted_start_date = last_disp_date
               then days_supply
               else null
-            end) over (partition by person_id, group_id) as last_days_supply
+            end) over (partition by person_id, data_source, group_id) as last_days_supply
     from grouped_fill_ranges
 
 )
@@ -226,6 +241,7 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , first_disp_date
         , last_disp_date
@@ -239,6 +255,7 @@ order by dispensing_date) as previous_ndc
     from last_med_end_groupwise
     group by
           person_id
+        , data_source
         , group_id
         , first_disp_date
         , last_disp_date
@@ -250,14 +267,19 @@ order by dispensing_date) as previous_ndc
 
     select
           person_id
+        , data_source
         , group_id
         , first_disp_date
         , last_disp_date
         , covered_days
-        , lag(last_disp_date) over (partition by person_id
-order by first_disp_date) as lag_date
-        , lag(last_days_supply) over (partition by person_id
-order by first_disp_date) as lag_days_supply
+        , lag(last_disp_date) over (
+            partition by person_id, data_source
+            order by first_disp_date
+          ) as lag_date
+        , lag(last_days_supply) over (
+            partition by person_id, data_source
+            order by first_disp_date
+          ) as lag_days_supply
     from covered_days_per_group
 
 )
@@ -266,6 +288,7 @@ order by first_disp_date) as lag_days_supply
 
     select
           person_id
+        , data_source
         , group_id
         , first_disp_date
         , last_disp_date
@@ -299,9 +322,10 @@ order by first_disp_date) as lag_days_supply
 
     select
           person_id
+        , data_source
         , sum(covered_days) - sum(overlap) as actual_covered_days
     from overlap_days
-    group by person_id
+    group by person_id, data_source
 
 )
 
@@ -309,12 +333,17 @@ order by first_disp_date) as lag_days_supply
 
     select
           final_covered_days.person_id
-        , round(cast(actual_covered_days / days_in_treatment_period as {{ dbt.type_numeric() }}), 4) as adherence
+        , final_covered_days.data_source
+        , round(
+            cast(actual_covered_days as {{ dbt.type_numeric() }})
+            / nullif(cast(days_in_treatment_period as {{ dbt.type_numeric() }}), 0)
+          , 4) as adherence
         , dispensing_date as evidence_date
         , days_supply as evidence_value
     from final_covered_days
     inner join denominator
       on final_covered_days.person_id = denominator.person_id
+      and final_covered_days.data_source = denominator.data_source
 
 )
 
@@ -322,6 +351,7 @@ order by first_disp_date) as lag_days_supply
 
     select
           person_id
+        , data_source
         , adherence * 100 as adherence --percent conversion
         , evidence_date
         , evidence_value
@@ -335,16 +365,18 @@ order by first_disp_date) as lag_days_supply
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(evidence_date as date) as evidence_date
         , cast(evidence_value as {{ dbt.type_string() }}) as evidence_value
         , cast(adherence as {{ dbt.type_numeric() }}) as adherence
-        , cast(numerator_flag as integer) as numerator_flag
+        , cast(numerator_flag as {{ dbt.type_int() }}) as numerator_flag
     from numerator
 
 )
 
 select
       person_id
+    , data_source
     , evidence_date
     , evidence_value
     , adherence

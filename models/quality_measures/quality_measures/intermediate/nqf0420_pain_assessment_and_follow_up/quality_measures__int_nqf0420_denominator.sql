@@ -22,6 +22,7 @@ with visit_codes as (
 
     select
           person_id
+        , encounter.data_source
         , coalesce(encounter.encounter_start_date, encounter.encounter_end_date) as min_date
         , coalesce(encounter.encounter_end_date, encounter.encounter_start_date) as max_date
     from {{ ref('quality_measures__stg_core__encounter') }} as encounter
@@ -39,9 +40,10 @@ with visit_codes as (
 , procedures as (
 
     select
-        person_id
-      , procedure_date
-      , coalesce(
+          person_id
+        , data_source
+        , procedure_date
+        , coalesce(
               normalized_code_type
             , case
                 when lower(source_code_type) = 'cpt' then 'hcpcs'
@@ -66,6 +68,7 @@ with visit_codes as (
 
     select
           person_id
+        , data_source
         , coalesce(claim_start_date, claim_end_date) as min_date
         , coalesce(claim_end_date, claim_start_date) as max_date
         , hcpcs_code
@@ -83,6 +86,7 @@ with visit_codes as (
 
     select
           procedures.person_id
+        , procedures.data_source
         , procedures.procedure_date as min_date
         , procedures.procedure_date as max_date
     from procedures
@@ -98,6 +102,7 @@ with visit_codes as (
 
     select
           claims.person_id
+        , claims.data_source
         , claims.min_date
         , claims.max_date
     from claims
@@ -131,6 +136,7 @@ with visit_codes as (
 
     select
           person_id
+        , data_source
         , max(max_date) as max_date
         , {{ the_tuva_project.concat_custom([
               "coalesce(min(visit_enc), '')"
@@ -138,7 +144,7 @@ with visit_codes as (
             , "coalesce(min(claim_enc), '')"
         ]) }} as qualifying_types
     from all_encounters
-    group by person_id
+    group by person_id, data_source
 
 )
 
@@ -146,11 +152,13 @@ with visit_codes as (
 
     select
           p.person_id
+        , p.data_source
         , floor({{ datediff('birth_date', 'e.max_date', 'hour') }} / 8760.0) as max_age
         , qualifying_types
     from {{ ref('quality_measures__stg_core__patient') }} as p
     inner join encounters_by_patient as e
         on p.person_id = e.person_id
+            and p.data_source = e.data_source
     where p.death_date is null
 
 )
@@ -160,6 +168,7 @@ with visit_codes as (
     select
         distinct
           person_id
+        , data_source
         , max_age as age
         , pp.performance_period_begin
         , pp.performance_period_end
@@ -177,19 +186,21 @@ with visit_codes as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(age as integer) as age
         , cast(performance_period_begin as date) as performance_period_begin
         , cast(performance_period_end as date) as performance_period_end
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
         , cast(measure_name as {{ dbt.type_string() }}) as measure_name
         , cast(measure_version as {{ dbt.type_string() }}) as measure_version
-        , cast(denominator_flag as integer) as denominator_flag
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
     from qualifying_patients
 
 )
 
 select
       person_id
+    , data_source
     , age
     , performance_period_begin
     , performance_period_end

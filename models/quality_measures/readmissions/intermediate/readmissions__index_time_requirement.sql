@@ -11,14 +11,17 @@
 
 
 with cte as (
-  select max(discharge_date) as max_discharge
+  select data_source, max(discharge_date) as max_discharge
   from {{ ref('readmissions__encounter') }}
+  group by data_source
 )
 
-select encounter_id
+select encounter.encounter_id
+, encounter.data_source
 , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
-from {{ ref('readmissions__encounter') }}
-cross join cte
+from {{ ref('readmissions__encounter') }} as encounter
+inner join cte
+  on encounter.data_source = cte.data_source
 where discharge_date <= {{ dbt.dateadd (
 datepart = "day"
 , interval = -30

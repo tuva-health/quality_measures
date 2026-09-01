@@ -7,6 +7,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , performance_period_begin
         , performance_period_end
         , measure_id
@@ -32,6 +33,7 @@ with denominator as (
 
     select
         person_id
+      , data_source
       , dispensing_date
     from {{ ref('quality_measures__stg_pharmacy_claim') }} as pharmacy_claims
     inner join statin_codes
@@ -44,10 +46,12 @@ with denominator as (
 
     select
           patients_taking_statin_meds.person_id
+        , patients_taking_statin_meds.data_source
         , patients_taking_statin_meds.dispensing_date as evidence_date
     from patients_taking_statin_meds
     inner join denominator
       on patients_taking_statin_meds.person_id = denominator.person_id
+        and patients_taking_statin_meds.data_source = denominator.data_source
         and dispensing_date between
           denominator.performance_period_begin and denominator.performance_period_end
 
@@ -57,6 +61,7 @@ with denominator as (
 
     select
           person_id
+        , data_source
         , evidence_date
         , 1 as numerator_flag
     from qualifying_patients_in_deno
@@ -67,15 +72,17 @@ with denominator as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(evidence_date as date) as evidence_date
         , cast(null as {{ dbt.type_string() }}) as evidence_value
-        , cast(numerator_flag as integer) as numerator_flag
+        , cast(numerator_flag as {{ dbt.type_int() }}) as numerator_flag
     from numerator
 
 )
 
 select
       person_id
+    , data_source
     , evidence_date
     , evidence_value
     , numerator_flag

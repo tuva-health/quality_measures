@@ -27,6 +27,7 @@ with ascvd_codes as (
 
     select
           person_id
+        , data_source
         , claim_id
         , encounter_id
         , recorded_date
@@ -42,6 +43,7 @@ with ascvd_codes as (
 
     select
           conditions.person_id
+        , conditions.data_source
         , conditions.recorded_date as evidence_date
     from conditions
     inner join ascvd_codes
@@ -54,6 +56,7 @@ with ascvd_codes as (
 
     select
           person_id
+        , data_source
         , procedure_date
         , coalesce(
               normalized_code_type
@@ -75,6 +78,7 @@ with ascvd_codes as (
 
     select
           procedures.person_id
+        , procedures.data_source
         , procedures.procedure_date as evidence_date
     from procedures
          inner join ascvd_codes
@@ -87,6 +91,7 @@ with ascvd_codes as (
 
     select
           ascvd_conditions.person_id
+        , ascvd_conditions.data_source
         , ascvd_conditions.evidence_date
     from ascvd_conditions
 
@@ -94,6 +99,7 @@ with ascvd_codes as (
 
     select
           ascvd_procedures.person_id
+        , ascvd_procedures.data_source
         , ascvd_procedures.evidence_date
     from ascvd_procedures
 
@@ -104,6 +110,7 @@ with ascvd_codes as (
     select
         distinct
           historical_ascvd.person_id
+        , historical_ascvd.data_source
         , pp.performance_period_begin
         , pp.performance_period_end
         , pp.measure_id
@@ -119,6 +126,7 @@ with ascvd_codes as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
         , cast(performance_period_begin as date) as performance_period_begin
         , cast(performance_period_end as date) as performance_period_end
         , cast(measure_id as {{ dbt.type_string() }}) as measure_id
@@ -130,6 +138,7 @@ with ascvd_codes as (
 
 select
       person_id
+    , data_source
     , performance_period_begin
     , performance_period_end
     , measure_id

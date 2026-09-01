@@ -8,6 +8,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from {{ ref('quality_measures__int_shared_exclusions_frailty') }}
@@ -31,6 +32,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , source_code_type
         , source_code
@@ -44,6 +46,7 @@ with patients_with_frailty as (
 
     select
           person_id
+        , data_source
         , dispensing_date
         , ndc_code
         , paid_date
@@ -55,6 +58,7 @@ with patients_with_frailty as (
 
     select
           medications.person_id
+        , medications.data_source
         , medications.dispensing_date
         , exclusion_codes.concept_name
     from medications
@@ -66,6 +70,7 @@ with patients_with_frailty as (
 
     select
           medications.person_id
+        , medications.data_source
         , medications.dispensing_date
         , exclusion_codes.concept_name
     from medications
@@ -77,6 +82,7 @@ with patients_with_frailty as (
 
     select
           medications.person_id
+        , medications.data_source
         , medications.dispensing_date
         , exclusion_codes.concept_name
     from medications
@@ -90,6 +96,7 @@ with patients_with_frailty as (
 
     select
           pharmacy_claim.person_id
+        , pharmacy_claim.data_source
         , pharmacy_claim.dispensing_date
         , pharmacy_claim.ndc_code
         , pharmacy_claim.paid_date
@@ -105,6 +112,7 @@ with patients_with_frailty as (
 
     select
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , patients_with_frailty.exclusion_date
         , {{ the_tuva_project.concat_custom([
             "patients_with_frailty.exclusion_reason",
@@ -116,11 +124,13 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join pharmacy_claim_exclusions
             on patients_with_frailty.person_id = pharmacy_claim_exclusions.person_id
+            and patients_with_frailty.data_source = pharmacy_claim_exclusions.data_source
 
     union all
 
     select
           patients_with_frailty.person_id
+        , patients_with_frailty.data_source
         , medication_exclusions.dispensing_date as exclusion_date
         , {{ the_tuva_project.concat_custom([
             "patients_with_frailty.exclusion_reason",
@@ -132,11 +142,13 @@ with patients_with_frailty as (
     from patients_with_frailty
          inner join medication_exclusions
          on patients_with_frailty.person_id = medication_exclusions.person_id
+         and patients_with_frailty.data_source = medication_exclusions.data_source
 
 )
 
 select
       person_id
+    , data_source
     , exclusion_date
     , exclusion_reason
     , 'dementia' as exclusion_type

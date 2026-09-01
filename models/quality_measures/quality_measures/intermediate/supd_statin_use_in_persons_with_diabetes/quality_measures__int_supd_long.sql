@@ -7,6 +7,7 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , performance_period_begin
         , performance_period_end
         , measure_id
@@ -16,6 +17,7 @@ with denominator_ranked as (
         , row_number() over (
             partition by
                   person_id
+                , data_source
                 , performance_period_begin
                 , performance_period_end
                 , measure_id
@@ -32,6 +34,7 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , performance_period_begin
         , performance_period_end
         , measure_id
@@ -47,10 +50,11 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , evidence_date
         , evidence_value
         , row_number() over (
-            partition by person_id
+            partition by person_id, data_source
             order by
                   case when evidence_date is null then 1 else 0 end
                 , evidence_date desc
@@ -63,6 +67,7 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , evidence_date
         , evidence_value
     from numerator_ranked
@@ -74,10 +79,11 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
         , row_number() over (
-            partition by person_id
+            partition by person_id, data_source
             order by
                   case when exclusion_date is null then 1 else 0 end
                 , exclusion_date desc
@@ -90,6 +96,7 @@ with denominator_ranked as (
 
     select
           person_id
+        , data_source
         , exclusion_date
         , exclusion_reason
     from exclusions_ranked
@@ -101,6 +108,7 @@ with denominator_ranked as (
 
     select
           denominator.person_id
+        , denominator.data_source
         , case
             when denominator.person_id is not null
             then 1
@@ -132,8 +140,10 @@ with denominator_ranked as (
     from denominator
         left outer join numerator
             on denominator.person_id = numerator.person_id
+            and denominator.data_source = numerator.data_source
         left outer join exclusions
             on denominator.person_id = exclusions.person_id
+            and denominator.data_source = exclusions.data_source
 
 )
 
@@ -141,9 +151,10 @@ with denominator_ranked as (
 
     select
           cast(person_id as {{ dbt.type_string() }}) as person_id
-        , cast(denominator_flag as integer) as denominator_flag
-        , cast(numerator_flag as integer) as numerator_flag
-        , cast(exclusion_flag as integer) as exclusion_flag
+        , cast(data_source as {{ dbt.type_string() }}) as data_source
+        , cast(denominator_flag as {{ dbt.type_int() }}) as denominator_flag
+        , cast(numerator_flag as {{ dbt.type_int() }}) as numerator_flag
+        , cast(exclusion_flag as {{ dbt.type_int() }}) as exclusion_flag
         , cast(evidence_date as date) as evidence_date
         , cast(evidence_value as {{ dbt.type_string() }}) as evidence_value
         , cast(exclusion_date as date) as exclusion_date
@@ -159,6 +170,7 @@ with denominator_ranked as (
 
 select
       person_id
+    , data_source
     , denominator_flag
     , numerator_flag
     , exclusion_flag

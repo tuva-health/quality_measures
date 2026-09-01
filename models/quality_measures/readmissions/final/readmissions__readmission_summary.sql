@@ -14,8 +14,8 @@ with encounter_sequence as (
 select
     *
     , row_number() over (
-        partition by person_id
-order by admit_date, discharge_date
+        partition by person_id, data_source
+        order by admit_date, discharge_date, encounter_id
     ) as encounter_seq
 from {{ ref('readmissions__encounter_augmented') }}
 where disqualified_encounter_flag = 0
@@ -26,6 +26,7 @@ where disqualified_encounter_flag = 0
 select
     aa.encounter_id
     , aa.person_id
+    , aa.data_source
     , aa.admit_date
     , aa.discharge_date
     , aa.discharge_disposition_code
@@ -34,25 +35,25 @@ select
     , aa.drg_code
     , aa.paid_amount
     , aa.length_of_stay
-    , aa.index_admission_flag
-    , aa.planned_flag
+    , cast(aa.index_admission_flag as {{ dbt.type_int() }}) as index_admission_flag
+    , cast(aa.planned_flag as {{ dbt.type_int() }}) as planned_flag
     , aa.specialty_cohort
-    , aa.died_flag
+    , cast(aa.died_flag as {{ dbt.type_int() }}) as died_flag
     , aa.diagnosis_ccs
-    , case
+    , cast(case
         when bb.encounter_id is not null then 1
-	    else 0
-    end as had_readmission_flag
+        else 0
+      end as {{ dbt.type_int() }}) as had_readmission_flag
     , {{ dbt.datediff("aa.discharge_date", "bb.admit_date","day") }} as days_to_readmit
-    , case
+    , cast(case
         when ({{ dbt.datediff("aa.discharge_date", "bb.admit_date","day") }}) <= 30 then 1
-	    else 0
-    end as readmit_30_flag
-    , case
+        else 0
+      end as {{ dbt.type_int() }}) as readmit_30_flag
+    , cast(case
         when
-	    (({{ dbt.datediff("aa.discharge_date", "bb.admit_date", "day") }}) <= 30) and (bb.planned_flag = 0) then 1
-	    else 0
-    end as unplanned_readmit_30_flag
+        (({{ dbt.datediff("aa.discharge_date", "bb.admit_date", "day") }}) <= 30) and (bb.planned_flag = 0) then 1
+        else 0
+      end as {{ dbt.type_int() }}) as unplanned_readmit_30_flag
     , bb.encounter_id as readmission_encounter_id
     , bb.admit_date as readmission_admit_date
     , bb.discharge_date as readmission_discharge_date
@@ -61,16 +62,17 @@ select
     , bb.drg_code_type as readmission_drg_code_type
     , bb.drg_code as readmission_drg
     , bb.length_of_stay as readmission_length_of_stay
-    , bb.index_admission_flag as readmission_index_admission_flag
-    , bb.planned_flag as readmission_planned_flag
+    , cast(bb.index_admission_flag as {{ dbt.type_int() }}) as readmission_index_admission_flag
+    , cast(bb.planned_flag as {{ dbt.type_int() }}) as readmission_planned_flag
     , bb.specialty_cohort as readmission_specialty_cohort
-    , bb.died_flag as readmission_died_flag
+    , cast(bb.died_flag as {{ dbt.type_int() }}) as readmission_died_flag
     , bb.diagnosis_ccs as readmission_diagnosis_ccs
     , cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from
     encounter_sequence as aa
     left outer join encounter_sequence as bb
     on aa.person_id = bb.person_id
+    and aa.data_source = bb.data_source
     and aa.encounter_seq + 1 = bb.encounter_seq
 )
 

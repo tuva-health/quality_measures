@@ -35,7 +35,7 @@ with cohort_ranks as (
 , all_encounter_cohorts as (
 
     --encounter ids in procedure based cohorts
-        select procs.encounter_id, 1 as c_rank
+        select procs.encounter_id, procs.data_source, 1 as c_rank
         from {{ ref('readmissions__procedure_ccs') }} as procs
         left outer join {{ ref('readmissions__surgery_gynecology_cohort') }} as sgc
             on procs.procedure_code = sgc.icd_10_pcs
@@ -46,7 +46,7 @@ with cohort_ranks as (
     union all
 
     --encounter ids in diagnosis based cohorts
-    select diag.encounter_id, cohort_ranks.c_rank
+    select diag.encounter_id, diag.data_source, cohort_ranks.c_rank
     from {{ ref('readmissions__encounter_with_ccs') }} as diag
     inner join {{ ref('readmissions__specialty_cohort') }} as sc
         on diag.ccs_diagnosis_category = sc.ccs and sc.procedure_or_diagnosis = 'Diagnosis'
@@ -57,17 +57,18 @@ with cohort_ranks as (
 
 -- getting one cohort per encounter
 , main_encounter_cohort as (
-    select encounter_id, min(c_rank) as main_c_rank
+    select encounter_id, data_source, min(c_rank) as main_c_rank
     from all_encounter_cohorts
-    group by encounter_id
+    group by encounter_id, data_source
 
 )
 
 
 --getting all encounters, with labeled cohorts, if no cohort cohort is "medicine"
-select enc.encounter_id, coalesce(cohort_ranks.cohort, 'Medicine') as specialty_cohort, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
+select enc.encounter_id, enc.data_source, coalesce(cohort_ranks.cohort, 'Medicine') as specialty_cohort, cast('{{ var('tuva_last_run') }}' as {{ dbt.type_timestamp() }}) as tuva_last_run
 from {{ ref('readmissions__encounter') }} as enc
 left outer join main_encounter_cohort as mec
     on enc.encounter_id = mec.encounter_id
+    and enc.data_source = mec.data_source
 left outer join cohort_ranks
     on mec.main_c_rank = cohort_ranks.c_rank
