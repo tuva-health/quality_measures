@@ -3,25 +3,17 @@
    )
 }}
 
-{%- set performance_period_begin -%}
-(
-  select 
-    performance_period_begin
-  from {{ ref('quality_measures__int_nqf0420__performance_period') }}
+-- Join the singleton period so Fabric can resolve it inside nested unit-test CTEs.
+with performance_period as (
+
+    select
+          performance_period_begin
+        , performance_period_end
+    from {{ ref('quality_measures__int_nqf0420__performance_period') }}
 
 )
-{%- endset -%}
 
-{%- set performance_period_end -%}
-(
-  select 
-    performance_period_end
-  from {{ ref('quality_measures__int_nqf0420__performance_period') }}
-
-)
-{%- endset -%}
-
-with denominator as (
+, denominator as (
 
     select
         person_id
@@ -62,7 +54,9 @@ with denominator as (
             , source_code
           ) as code
     from {{ ref('quality_measures__stg_core__procedure') }}
-    where procedure_date between {{ performance_period_begin }} and {{ performance_period_end }}
+    cross join performance_period
+    where procedure_date between performance_period.performance_period_begin
+        and performance_period.performance_period_end
 
 )
 
@@ -75,7 +69,10 @@ with denominator as (
         , claim_end_date
         , hcpcs_code
     from {{ ref('quality_measures__stg_medical_claim') }}
-    where coalesce(claim_end_date, claim_start_date) between {{ performance_period_begin }} and {{ performance_period_end }}
+    cross join performance_period
+    where coalesce(claim_end_date, claim_start_date)
+        between performance_period.performance_period_begin
+        and performance_period.performance_period_end
 
 )
 
