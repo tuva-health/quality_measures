@@ -201,12 +201,14 @@ unit_tests:
       - input: ref('quality_measures__stg_medical_claim')
         format: sql
         rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar(256)' %}
+          -- Typed NULLs keep Redshift from narrowing an empty fixture to literal widths.
           select
-              'unused' as person_id
+              cast(null as {{ string_type }}) as person_id
             , 'source_a' as data_source
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
-            , 'unused' as hcpcs_code
+            , cast(null as {{ string_type }}) as hcpcs_code
           from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
     expect:

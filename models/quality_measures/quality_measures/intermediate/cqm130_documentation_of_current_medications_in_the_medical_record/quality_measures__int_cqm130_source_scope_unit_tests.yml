@@ -97,13 +97,15 @@ unit_tests:
       - input: ref('quality_measures__stg_core__encounter')
         format: sql
         rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar(256)' %}
+          -- Typed NULLs keep Redshift from narrowing an empty fixture to literal widths.
           select
-              'unused' as person_id
+              cast(null as {{ string_type }}) as person_id
             , 'source_a' as data_source
             , cast('2024-01-15' as date) as encounter_start_date
             , cast('2024-01-15' as date) as encounter_end_date
-            , 'unused' as encounter_type
-            , 'unused' as encounter_group
+            , cast(null as {{ string_type }}) as encounter_type
+            , cast(null as {{ string_type }}) as encounter_group
           from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__procedure')
@@ -118,12 +120,13 @@ unit_tests:
       - input: ref('quality_measures__stg_medical_claim')
         format: sql
         rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar(256)' %}
           select
-              'unused' as person_id
+              cast(null as {{ string_type }}) as person_id
             , 'source_a' as data_source
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
-            , 'unused' as hcpcs_code
+            , cast(null as {{ string_type }}) as hcpcs_code
           from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_cqm130__performance_period')
@@ -243,15 +246,17 @@ unit_tests:
       - input: ref('quality_measures__stg_core__condition')
         format: sql
         rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar(256)' %}
+          -- Typed NULLs keep Redshift from narrowing an empty fixture to literal widths.
           select
-              'unused' as person_id
+              cast(null as {{ string_type }}) as person_id
             , 'source_a' as data_source
             , cast('2024-01-15' as date) as recorded_date
-            , 'unused' as claim_id
-            , 'unused' as normalized_code_type
-            , 'unused' as source_code_type
-            , 'unused' as normalized_code
-            , 'unused' as source_code
+            , cast(null as {{ string_type }}) as claim_id
+            , cast(null as {{ string_type }}) as normalized_code_type
+            , cast(null as {{ string_type }}) as source_code_type
+            , cast(null as {{ string_type }}) as normalized_code
+            , cast(null as {{ string_type }}) as source_code
           from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__procedure')
@@ -268,12 +273,13 @@ unit_tests:
       - input: ref('quality_measures__stg_medical_claim')
         format: sql
         rows: |
+          {% set string_type = 'string' if target.type in ['bigquery', 'databricks'] else 'varchar(256)' %}
           select
-              'unused' as person_id
+              cast(null as {{ string_type }}) as person_id
             , 'source_a' as data_source
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
-            , 'unused' as hcpcs_code
+            , cast(null as {{ string_type }}) as hcpcs_code
           from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_cqm130_denominator')
