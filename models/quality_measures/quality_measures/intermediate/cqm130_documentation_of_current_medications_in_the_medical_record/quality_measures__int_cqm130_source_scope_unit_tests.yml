@@ -16,6 +16,7 @@ unit_tests:
               'unused' as code
             , 'unused' as code_system
             , 'unused' as concept_name
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__encounter')
         format: sql
@@ -36,6 +37,7 @@ unit_tests:
             , cast('2024-01-15' as date) as procedure_date
             , 'unused' as normalized_code
             , 'unused' as source_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_medical_claim')
         format: sql
@@ -46,6 +48,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_cqm130__performance_period')
         format: sql
@@ -101,6 +104,7 @@ unit_tests:
             , cast('2024-01-15' as date) as encounter_end_date
             , 'unused' as encounter_type
             , 'unused' as encounter_group
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__procedure')
         format: sql
@@ -120,6 +124,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_cqm130__performance_period')
         format: sql
@@ -205,6 +210,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
     expect:
       rows:
@@ -246,6 +252,7 @@ unit_tests:
             , 'unused' as source_code_type
             , 'unused' as normalized_code
             , 'unused' as source_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__procedure')
         format: sql
@@ -267,6 +274,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_cqm130_denominator')
         format: sql

@@ -16,6 +16,7 @@ unit_tests:
               'unused' as code
             , 'unused' as code_system
             , 'unused' as concept_name
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_core__encounter')
         format: sql
@@ -43,6 +44,7 @@ unit_tests:
             , 'unused' as modifier_3
             , 'unused' as modifier_4
             , 'unused' as modifier_5
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__stg_medical_claim')
         format: sql
@@ -59,6 +61,7 @@ unit_tests:
             , 'unused' as hcpcs_modifier_4
             , 'unused' as hcpcs_modifier_5
             , 'unused' as place_of_service_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
       - input: ref('quality_measures__int_nqf0420__performance_period')
         format: sql
@@ -144,6 +147,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
     expect:
       rows:
@@ -203,6 +207,7 @@ unit_tests:
             , cast('2024-01-15' as date) as claim_start_date
             , cast('2024-01-15' as date) as claim_end_date
             , 'unused' as hcpcs_code
+          from (select 1 as _tuva_empty_fixture) as _tuva_empty_fixture
           where 1 = 0
     expect:
       rows:
