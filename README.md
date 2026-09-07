@@ -53,30 +53,28 @@ Core version, and claims/clinical configuration.
 
 ## Installation
 
-Add Tuva Core and this package to the root project's `packages.yml`. Once both
-releases are available on dbt Hub, a typical installation is:
+Declare Tuva Core and this package once in the root project's
+`packages.yml`. Use the immutable 1.0 release tags:
+
+```yaml
+packages:
+  - git: "https://github.com/tuva-health/tuva-core.git"
+    revision: "v1.0.0"
+  - git: "https://github.com/tuva-health/quality_measures.git"
+    revision: "v1.0.0"
+```
+
+After these releases are available on dbt Hub, the equivalent installation is:
 
 ```yaml
 packages:
   - package: tuva-health/the_tuva_project
     version: 1.0.0
   - package: tuva-health/quality_measures
-    version: 0.1.0
+    version: 1.0.0
 ```
 
-During the Tuva 1.0 prerelease window, or before a new Hub release is indexed,
-pin the repositories directly instead:
-
-```yaml
-packages:
-  - git: "https://github.com/tuva-health/tuva-core.git"
-    revision: "<verified-tuva-core-commit-or-tag>"
-  - git: "https://github.com/tuva-health/quality_measures.git"
-    revision: "v0.1.0"
-```
-
-Replace the Core placeholder with a tested Tuva 1.0-compatible revision. Then
-install dependencies from the root project:
+Then install dependencies from the root project:
 
 ```bash
 dbt deps
