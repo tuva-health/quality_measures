@@ -6,7 +6,7 @@ import re
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_DBT_REQUIREMENT = ">=1.10.5,<3.0.0"
+EXPECTED_DBT_REQUIREMENT = '[">=1.10.5", "<3.0.0"]'
 EXPECTED_ASSET_ROOT = "data-marts/quality-measures"
 EXPECTED_ASSET_VAR = "quality_measures_data_asset_version"
 
@@ -24,7 +24,7 @@ def main() -> None:
     workflow = workflow_path.read_text(encoding="utf-8")
 
     dbt_requirement = extract(
-        r"^require-dbt-version:\s*['\"]([^'\"]+)['\"]\s*$",
+        r"^require-dbt-version:\s*(\[[^\n]+\])\s*$",
         project,
         project_path,
     )
